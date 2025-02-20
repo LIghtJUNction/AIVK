@@ -1,2 +1,3 @@
-# AIVFS_KERNEL
-AI内核计划
+AIVK
+
+AIVK is vitual kernel
