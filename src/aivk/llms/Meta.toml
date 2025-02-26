@@ -1,0 +1,7 @@
+[Metadata]
+__name__ = "llms"
+
+[Metadata.llms]
+models = [
+    [ "llama3.1:8b", "http://localhost:11434/v1", "ollama"],
+]
