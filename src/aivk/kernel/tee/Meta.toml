@@ -1,2 +1,6 @@
 [Metadata]
-__name__ = "kernel.tee"
+AIVKey = [ "7fdcf000a5071ffc75d61ba6653ecb7bffe84073a0d0d83bdccfbd3f3df720e3", "62bbca3fd36933434da228c29dc1f3fbe6c50f07da35fb72a5e21c65cc774d0e",]
+
+[Metadata.tee]
+"TEE-1DDD20E92137.description" = [ "156151", "456'",]
+"TEE-4818FF107958.description" = [ "V3小店API_KEY", "bE6'",]

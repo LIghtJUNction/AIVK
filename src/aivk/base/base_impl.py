@@ -1,6 +1,7 @@
 from . import MetaLoader
 import inspect
 import os
+import toml
 
 class Base():
     """ base class for all classes """
