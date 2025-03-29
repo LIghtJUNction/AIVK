@@ -1,9 +1,0 @@
-[Metadata]
-__name__ = "llms"
-
-[Metadata.llms]
-models = [ [ "llama3.1:8b", "http://localhost:11434/v1", "ollama", "local",], [ "gpt-4o", "https://api.vveai.com/v1", "TEE-4818FF107958", "online",],]
-
-[Metadata.llms.client]
-"llama3.1:8b" = [ "local_01b5",]
-gpt-4o = [ "online_7bE6",]

@@ -1,8 +1,0 @@
-[Metadata]
-__name__ = "agents"
-
-[Metadata.agents.agent_example]
-system_prompt = "你是一个测试助手，主要用于演示工具调用功能。\n当用户请求执行工具时，你必须直接调用相应的工具，而不是解释如何使用它。\n\n可用工具:\n- example: 接收text参数，执行示例操作并返回结果\n\n当用户请求执行example工具时，请直接调用此工具。例如，当用户说\"执行example工具，参数设为'测试一下'\"时，\n应该调用example工具并传递text参数为\"测试一下\"。"
-model_id = "online_7bE6"
-tools = [ "example",]
-description = "示例Agent模块\n\n用于展示基本的对话和工具调用功能，包括example工具的使用\n"
