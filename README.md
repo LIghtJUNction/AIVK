@@ -13,7 +13,9 @@ AIVK (AI Virtual Kernel) 是一个高度模块化的AI应用框架，提供插�
 - **插件系统**：支持多种插件类型，包括LLM提供者、数据源、UI组件、工具和扩展
 - **事件驱动架构**：基于发布-订阅模式的事件总线，实现组件间的松耦合通信
 - **统一的配置管理**：灵活的配置和目录结构管理，支持多环境配置
-
+- **灵活的模块管理方式**：aivk本身即为一种特殊模块
+- **其他核心模块开发中**
+  
 ## 安装
 
 ### 使用uv安装（推荐）
@@ -59,19 +61,25 @@ AIVK本身是一个特殊的AIVK模块，提供基础功能与命令行工具，
 ## 快速开始
 
 ### 初始化AIVK环境
-
+AIVK_ROOT 替换为aivk根目录路径（空目录或不存在：自动新建）
+如果不替换，将使用AIVK_ROOT环境变量
+tip：
+  修改AIVK_ROOT环境变量为指定目录
+  可以新建文件夹后将该文件夹拖动至终端快捷填入路径
+ 
+初始化：
 ```bash
 aivk -i AIVK_ROOT
 ```
 
 ### 挂载AIVK目录
-
+挂载即启动aivk元模块 元模块启动后将立即加载加载器loader
 ```bash
 aivk -m AIVK_ROOT
 ```
 
 ### 运行AIVK CLI界面
-
+菜单：
 ```bash
 aivk
 ```
@@ -101,6 +109,7 @@ aivk_root/
 - [文件结构](docs/file_structure.md)
 - [插件开发指南](docs/plugins/README.md)
 - [API参考](docs/api_reference.md)
+- [快捷模块开发模板](https://github.com/LIghtJUNction/aivk-module-sample)
 
 ## 贡献指南
 
