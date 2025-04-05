@@ -1,11 +1,45 @@
 [project]
 name = "aivk"
 version = "0.1.0"
-description = "AI viture kernel"
+description = "AIVK - AI Virtual Kernel"
 readme = "README.md"
-requires-python = ">=3.13"
-dependencies = [
-    "dotenv>=0.9.9",
-    "mcp>=1.6.0",
-    "openai-agents>=0.0.7",
+authors = [
+    {name = "LIghtJUNction", email = "LIghtJUNction.me@gmail.com"}
 ]
+license = "MIT"
+
+requires-python = ">=3.9"
+dependencies = [
+    "pydantic>=2.0.0",
+    "toml>=0.10.2",
+    "aiohttp>=3.8.1",
+    "asyncio>=3.4.3",
+    "openai>=1.70.0",
+    "openai-agents>=0.0.7",
+    "rich>=14.0.0",
+    "uv>=0.6.12",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "black>=22.1.0",
+    "isort>=5.10.1",
+]
+
+[project.scripts]
+aivk = "aivk.cli.__main__:main"
+
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+
+[tool.uv.workspace]
+members = ["dev/moduleA", "dev/moduleB"]

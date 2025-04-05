@@ -1,0 +1,19 @@
+type = "module" # or "modules"
+modules = ['aivk'] # if type is "modules", this should be a list of module IDs 
+
+id="aivk"
+name="aivk"
+version="0.1.0"
+versionCode=25040301
+description="AIVK - AI Virtual Kernel"
+author="LIghtJUNction"
+updateJson="https://.../update.json"
+license="MIT"
+
+startMode="import" # or "process" # 模块启动模式：
+# - import: 作为模块导入(在同一进程中运行) 建议核心模块使用此模式 方便通信
+# - process: 作为独立进程运行
+
+
+dependencies = [
+]

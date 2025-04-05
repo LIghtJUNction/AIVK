@@ -1,0 +1,14 @@
+created = "2025-04-05T21:16:39.912389"
+directory = "modules"
+last_updated = "2025-04-05T22:47:35.980310"
+
+[modules]
+loader = true
+
+[timestamps]
+last_updated = "2025-04-05T22:47:35.997932"
+loader = "2025-04-05T22:47:35.997932"
+
+[sha256]
+directory = "e7bba76e13f447201954fb7ce0efeabc7126f0330d5f83b162def1d4005bc23f"
+loader = "a7a0a3f060e2550c7358c857fec8ce4f374807abd7960d090f725ad1bfdec206"

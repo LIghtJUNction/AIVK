@@ -1,3 +1,26 @@
+Metadata-Version: 2.4
+Name: aivk
+Version: 0.1.0
+Summary: AIVK - AI Virtual Kernel
+Author-email: LIghtJUNction <LIghtJUNction.me@gmail.com>
+License-Expression: MIT
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: pydantic>=2.0.0
+Requires-Dist: toml>=0.10.2
+Requires-Dist: aiohttp>=3.8.1
+Requires-Dist: asyncio>=3.4.3
+Requires-Dist: openai>=1.70.0
+Requires-Dist: openai-agents>=0.0.7
+Requires-Dist: rich>=14.0.0
+Requires-Dist: uv>=0.6.12
+Provides-Extra: dev
+Requires-Dist: pytest>=7.0.0; extra == "dev"
+Requires-Dist: black>=22.1.0; extra == "dev"
+Requires-Dist: isort>=5.10.1; extra == "dev"
+Dynamic: license-file
+
 # AIVK - AI Virtual Kernel
 
 AIVK (AI Virtual Kernel) 是一个高度模块化的AI应用框架，提供插件化架构和事件驱动设计，支持多种AI模型和服务集成。

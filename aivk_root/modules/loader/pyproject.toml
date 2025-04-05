@@ -1,0 +1,12 @@
+[project]
+name = "aivk-core-loader"
+version = "0.1.0"
+description = "aivk-core-loader"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "aivk",
+]
+
+[tool.uv.sources]
+aivk = { path = "../AIVK", editable = true }

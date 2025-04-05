@@ -1,0 +1,21 @@
+type = "module"
+modules = ['loader']
+
+# if type is "module": 
+id="loader"
+name="aivk module Loader"
+version="0.1.0"
+versionCode=25040301
+description="This module is a core component of the aivk."
+author="LIghtJUNction"
+updateJson="https://github.com/LIghtJUNction/aivk-module-sample/blob/Loader/update.json"
+license="MIT"
+
+# 模块启动模式：
+# - import: 作为模块导入(在同一进程中运行) 建议核心模块使用此模式 方便通信
+# - process: 在独立进程中启动 建议非核心模块使用此模式 方便调试和隔离 可以使用独立的python环境
+startMode="import"
+
+dependencies = [
+]
+
