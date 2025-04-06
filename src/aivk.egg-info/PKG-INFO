@@ -13,123 +13,150 @@ Requires-Dist: rich>=14.0.0
 Requires-Dist: pydantic>=2.11.2
 Dynamic: license-file
 
-# AIVK - AI Virtual Kernel
+# AIVK
 
-AIVK (AI Virtual Kernel) 是一个高度模块化的AI应用框架，提供插件化架构和事件驱动设计，支持多种AI模型和服务集成。
+AIVK 是一个模块化的 AI 开发框架。
+AIVK is a modular AI development framework.
 
-# 语言 / Languages
+## 核心模块 | Core Modules
 
-[简体中文](README.md) | [English](README.en.md) | [日本語](README.ja.md) | [Español](README.es.md) | [Français](README.fr.md) | [Deutsch](README.de.md)
+AIVK 包含以下核心模块：
+AIVK includes the following core modules:
 
-## 核心特性
+| 模块 ID | 描述 | Description |
+|---------|------|-------------|
+| `aivk` | 核心框架 | Core Framework |
+| `aivk-fs` | 文件系统模块 | File System Module |
+| `aivk-loader` | 模块加载器 | Module Loader |
+| `aivk-messenger` | 消息通信模块 | Message Communication Module |
+| `aivk-scheduler` | 调度器模块 | Scheduler Module |
+| `aivk-ai` | AI 功能模块 | AI Functionality Module |
 
-- **模块化设计**：基于LKM（可加载内核模块）的架构，支持动态加载和卸载功能模块
-- **完整的生命周期管理**：提供初始化、挂载、卸载和更新等完整生命周期控制
-- **插件系统**：支持多种插件类型，包括LLM提供者、数据源、UI组件、工具和扩展
-- **事件驱动架构**：基于发布-订阅模式的事件总线，实现组件间的松耦合通信
-- **统一的配置管理**：灵活的配置和目录结构管理，支持多环境配置
-- **灵活的模块管理方式**：aivk本身即为一种特殊模块
-- **其他核心模块开发中**
-  
-## 安装
+### 特殊模块 | Special Modules
 
-### 使用uv安装（推荐）
+| 模块 ID | 描述 | Description |
+|---------|------|-------------|
+| `aivk-webui` | Web 界面模块 | Web Interface Module |
 
-#### Windows:
+## 快速开始 | Quick Start
 
-```powershell
-powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
-```
-
-#### Linux/MacOS:
-
-```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh
-# 或
-wget -qO- https://astral.sh/uv/install.sh | sh
-```
-
-更多安装选项请参考 [uv安装文档](https://hellowac.github.io/uv-zh-cn/getting-started/installation/)
-
-### 安装AIVK
-
-#### 安装命令行工具:
+### 1. 安装 AIVK | Install AIVK
 
 ```bash
-uv tool install aivk
-```
+# 使用 pip 安装 | Install using pip
+pip install aivk
 
-#### 安装Python包:
-
-```bash
+# 或使用 uv 安装 | Or install using uv
 uv pip install aivk
 ```
 
-#### 为项目添加AIVK依赖:
+### 2. 安装核心模块 | Install Core Modules
 
 ```bash
-uv add aivk
+# 使用默认配置 | Using default configuration
+aivk install core
+
+# 或指定配置文件 | Or specify configuration file
+aivk install core --config <path/to/config.toml>
 ```
 
-AIVK本身是一个特殊的AIVK模块，提供基础功能与命令行工具，核心功能由AIVK核心模块提供。
+默认配置文件位于 `src/aivk/config.toml`
+Default configuration file is located at `src/aivk/config.toml`
 
-## 快速开始
+### 3. 初始化 AIVK 根目录 | Initialize AIVK Root Directory
 
-### 初始化AIVK环境
-AIVK_ROOT 替换为aivk根目录路径（空目录或不存在：自动新建）
-如果不替换，将使用AIVK_ROOT环境变量
-tip：
-  修改AIVK_ROOT环境变量为指定目录
-  可以新建文件夹后将该文件夹拖动至终端快捷填入路径
- 
-初始化：
+AIVK 根目录可以通过以下方式设置：
+AIVK root directory can be set through:
+
+- 使用环境变量 `AIVK_ROOT`（可选）| Using environment variable `AIVK_ROOT` (optional)
+- 默认路径 | Default path: `~/.aivk`
+
+以下命令都是等价的初始化命令：
+The following initialization commands are equivalent:
+
 ```bash
-aivk -i AIVK_ROOT
+# 使用默认路径 | Using default path
+aivk fs init
+
+# 使用环境变量 | Using environment variable
+aivk fs init AIVK_ROOT
+
+# 指定自定义路径 | Specify custom path
+aivk fs init --path <path/to/aivk_root_dir>    # 方式 1 | Method 1
+aivk-fs init --path <path/to/aivk_root_dir>    # 方式 2 | Method 2
+aivk-fs-init --path <path/to/aivk_root_dir>    # 方式 3 | Method 3
 ```
 
-### 挂载AIVK目录
-挂载即启动aivk元模块 元模块启动后将立即加载加载器loader
+### 4. 加载框架 | Load Framework
+
+以下加载命令是等价的：
+The following load commands are equivalent:
+
 ```bash
-aivk -m AIVK_ROOT
+# 使用指定路径 | Using specified path
+aivk load --path <path/to/aivk_root_dir>       # 方式 1 | Method 1
+aivk-load --path <path/to/aivk_root_dir>       # 方式 2 | Method 2
+
+# 使用环境变量 | Using environment variable
+aivk load --path AIVK_ROOT
 ```
 
-### 运行AIVK CLI界面
-菜单：
+## CLI 命令参考 | CLI Command Reference
+
+### 基础命令 | Basic Commands
+
+以下帮助命令是等价的：
+The following help commands are equivalent:
+
 ```bash
-aivk
+# 查看帮助 | View help
+aivk -h
+aivk --h
+aivk help
 ```
 
-## 目录结构
+模块管理命令：
+Module management commands:
 
-AIVK创建的标准目录结构如下:
-
-```
-aivk_root/
-├── .aivk           # AIVK初始化标记文件
-├── meta.toml       # 元数据文件
-├── cache/          # 缓存数据
-├── data/           # 持久化数据
-├── logs/           # 日志文件
-├── modules/        # 模块目录
-├── modules_bak/    # 模块备份
-├── modules_update/ # 模块更新
-└── tmp/            # 临时文件
+```bash
+# 模块管理 | Module Management
+aivk install <moduleID>     # 安装模块 | Install module
+aivk uninstall <moduleID>   # 卸载模块 | Uninstall module
+aivk update <moduleID>      # 更新模块 | Update module
+aivk load --path <path>     # 加载框架 | Load framework
 ```
 
-## 开发文档
+### 模块命令格式 | Module Command Format
 
-更详细的开发文档请参考 `docs/` 目录下的文档:
+每个模块都支持以下等价的命令格式：
+Each module supports the following equivalent command formats:
 
-- [项目蓝图](docs/project_blueprint.md)
-- [文件结构](docs/file_structure.md)
-- [插件开发指南](docs/plugins/README.md)
-- [API参考](docs/api_reference.md)
-- [快捷模块开发模板](https://github.com/LIghtJUNction/aivk-module-sample)
+```bash
+# 模块命令格式 | Module Command Format
+aivk-<moduleID> [command]           # 模块主命令 | Module main command
+aivk-<moduleID>-load                # 加载模块 | Load module
+aivk-<moduleID>-unload              # 卸载模块 | Unload module
+aivk-<moduleID>-install             # 安装模块 | Install module
+aivk-<moduleID>-uninstall           # 卸载模块 | Uninstall module
+aivk-<moduleID>-update              # 更新模块 | Update module
+```
 
-## 贡献指南
+所有命令都支持以下等价的帮助参数：
+All commands support the following equivalent help parameters:
 
-欢迎贡献代码、报告问题或提供建议。请参阅 [贡献指南](CONTRIBUTING.md) 了解更多信息。
+```bash
+# 查看特定命令帮助 | View specific command help
+aivk-<moduleID> -h
+aivk <moduleID> load -h
+aivk <moduleID> unload -h
+aivk <moduleID> install -h
+aivk <moduleID> uninstall -h
+aivk <moduleID> update -h
+```
 
-## 许可证
+## 许可证 | License
 
-MIT
+[许可证信息 | License Information]
+
+
+

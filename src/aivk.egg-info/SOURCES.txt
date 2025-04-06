@@ -21,3 +21,5 @@ src/aivk/onUninstall/__init__.py
 src/aivk/onUninstall/__main__.py
 src/aivk/onUnload/__init__.py
 src/aivk/onUnload/__main__.py
+src/aivk/onUpdate/__init__.py
+src/aivk/onUpdate/__main__.py
