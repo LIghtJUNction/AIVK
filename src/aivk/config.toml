@@ -1,0 +1,15 @@
+# move it to aivk_root_dir / config.toml
+
+# default core module used by aivk 
+AIVK = "aivk"        # AIVK 核心模块 & 根模块 & 元模块
+AIVFS = "aivk-fs"        # 文件系统 / 文件结构 cli 模块
+AIVKL = "aivk-loader"    # 模块加载器
+AUVKM = "aivk-messenger"  # 模块间通信
+AIVKS = "aivk-scheduler" # 任务调度器
+AI = "aivk-ai"      # AI 模块
+
+# special module 
+WEBUI = "aivk-web"       # Web界面
+
+
+

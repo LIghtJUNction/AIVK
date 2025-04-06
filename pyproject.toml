@@ -1,6 +1,6 @@
 [project]
 name = "aivk"
-version = "0.1.0"
+version = "0.2.0"
 description = "AIVK - AI Virtual Kernel"
 readme = "README.md"
 authors = [
@@ -10,36 +10,35 @@ license = "MIT"
 
 requires-python = ">=3.9"
 dependencies = [
-    "pydantic>=2.0.0",
+    "async>=0.6.2",
     "toml>=0.10.2",
-    "aiohttp>=3.8.1",
-    "asyncio>=3.4.3",
-    "openai>=1.70.0",
-    "openai-agents>=0.0.7",
     "rich>=14.0.0",
-    "uv>=0.6.12",
-]
-
-[project.optional-dependencies]
-dev = [
-    "pytest>=7.0.0",
-    "black>=22.1.0",
-    "isort>=5.10.1",
+    "pydantic>=2.11.2",
 ]
 
 [project.scripts]
 aivk = "aivk.cli.__main__:main"
+aivk-load = "aivk.onLoad.__main__:main"
+aivk-unload = "aivk.onUnload.__main__:main"
+aivk-install = "aivk.onInstall.__main__:main"
+aivk-uninstall = "aivk.onUninstall.__main__:main"
+aivk-update = "aivk.cli.__main__:update"
 
-[build-system]
-requires = ["setuptools>=42", "wheel"]
-build-backend = "setuptools.build_meta"
 
-[tool.setuptools]
-package-dir = {"" = "src"}
+# GUIDE
+# aivk-<moduleID>
+# aivk-<moduleID>-load
+# aivk-<moduleID>-unload
+# aivk-<moduleID>-install
+# aivk-<moduleID>-uninstall
+# thank you for using AIVK
 
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-python_files = "test_*.py"
+# aivk-<moduleID> -h = aivk <moduleID> -h
+# aivk-<moduleID>-load -h = aivk <moduleID> load = aivk <moduleID> load -h
+# ...
 
-[tool.uv.workspace]
-members = ["dev/moduleA", "dev/moduleB"]
+# aivk <moduleID> -h = aivk-<moduleID> -h
+
+# aivk install = aivk-install
+
+

@@ -1,19 +1,29 @@
-type = "module" # or "modules"
-modules = ['aivk'] # if type is "modules", this should be a list of module IDs 
+# move it to aivk_root_dir / meta.toml
 
-id="aivk"
-name="aivk"
-version="0.1.0"
-versionCode=25040301
-description="AIVK - AI Virtual Kernel"
-author="LIghtJUNction"
-updateJson="https://.../update.json"
-license="MIT"
+type = "aivk"  # 模块类型 aivk / core / module / modules / 
 
-startMode="import" # or "process" # 模块启动模式：
-# - import: 作为模块导入(在同一进程中运行) 建议核心模块使用此模式 方便通信
-# - process: 作为独立进程运行
+# dir / modules / meta.toml : core / module 
+# dir / meta.toml : aivk  aivk is a special module type & meta module & root module , use the root dir / meta.toml
+
+# 基本信息
+[aivk] # type aivk
+id = "aivk"  # 模块唯一标识符 (建议命名：小写-连字符-英文 项目建议命名为 aivk-moduleID 避免重名 )
+name = "aivk"  # 模块名称
+version = "0.1.0"  # 版本号
+versionCode = 25040301  # 版本编码
+description = "AIVK - AI Virtual Kernel"  # 模块描述
+author = "LIghtJUNction"  # 作者
+license = "MIT"  # 许可证
+
+# 依赖配置
+# dependencies = []  # 模块依赖列表
+
+[aivk.root]
+path = "/path/to/aivk_root" # aivk_root_dir
+
+[modules]
+# if type == modules
+# moduleID以及刷入顺序 -- 批量刷入时使用
+# 先核心 后前置 最后一般
 
 
-dependencies = [
-]
