@@ -1,53 +1,45 @@
-import argparse
+from abc import ABC, abstractmethod
 import asyncio
-from enum import Enum
+import click
 import logging
-from pathlib import Path
-from typing import Optional, Any, Type, Literal
-from pydantic import BaseModel, Field
 
-class CommandType(str, Enum):
-    """基础命令类型枚举"""
-    LOAD = "Load"
-    UNLOAD = "Unload"
-    INSTALL = "Install"
-    UNINSTALL = "Uninstall"
+logger = logging.getLogger(__name__)
 
-
-class BaseCLI(BaseModel):
-    """基础命令行接口类
-    /cli/__main__.py 主cli继承该类
+class BaseCLI(ABC):
+    """AIVK CLI 基类
     
+    所有模块都应继承此类以获得标准的命令行结构。
+    支持两种等效的调用方式:
+    1. aivk-<module_id> xxx
+    2. aivk <module_id> xxx
     """
-    pass
-
-class LoadCLI(BaseCLI):
-    """加载命令行接口
-    /onLoad/__main__.py 附cli程序 继承该类 作用：python -m aivk.onLoad --anything 传递参数调用时使用该cli
-
-    """
-    pass
-
-class UnloadCLI(BaseCLI):
-    """卸载命令行接口
-    /onUnload/__main__.py 附cli程序 继承该类 作用：python -m aivk.onUnload --anything 传递参数调用时使用该cli
-
-    """
-    pass    
-
-class InstallCLI(BaseCLI):
-    """安装命令行接口
-    /onInstall/__main__.py 附cli程序 继承该类 作用：python -m aivk.onInstall --anything 传递参数调用时使用该cli
-
-    """
-    pass
-
-class UninstallCLI(BaseCLI):
-    """卸载命令行接口
-    /onUninstall/__main__.py 附cli程序 继承该类 作用：python -m aivk.onUninstall --anything 传递参数调用时使用该cli
-
-    """
-    pass
-
-
-
+    
+    @abstractmethod
+    def __init__(self):
+        """初始化模块，子类必须指定 module_id"""
+        self.module_id = None
+        
+    @abstractmethod
+    async def on_load(self, **kwargs):
+        """加载模块时的钩子"""
+        pass
+        
+    @abstractmethod
+    async def on_unload(self, **kwargs):
+        """卸载模块时的钩子"""
+        pass
+    
+    @abstractmethod
+    async def on_install(self, **kwargs):
+        """安装模块时的钩子"""
+        pass
+        
+    @abstractmethod
+    async def on_uninstall(self, **kwargs):
+        """卸载模块时的钩子"""
+        pass
+        
+    @abstractmethod
+    async def on_update(self, **kwargs):
+        """更新模块时的钩子"""
+        pass

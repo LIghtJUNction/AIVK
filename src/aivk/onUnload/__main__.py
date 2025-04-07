@@ -16,13 +16,13 @@ async def unload(**kwargs) -> bool:
 
     return True
 
-def main() -> None:
+def cli() -> None:
     """终端：aivk-unload
     入口点二
     """
     # TODO: 通过命令行参数获取并传递参数
     kwargs = {}
-    
+    logger.info(f"kwargs: {kwargs}")
     asyncio.run(unload(**kwargs))
 
 
@@ -30,6 +30,6 @@ if __name__ == "__main__":
     """python -m aivk.onUnload
     入口点三
     """
-    main()
+    cli()
 
 

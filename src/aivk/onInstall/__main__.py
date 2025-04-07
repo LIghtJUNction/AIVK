@@ -16,7 +16,7 @@ async def install(**kwargs) -> bool:
 
     return True
 
-def main() -> None:
+def cli() -> None:
     """终端：aivk-install
     入口点二
     """
@@ -30,5 +30,5 @@ if __name__ == "__main__":
     """python -m aivk.onInstall
     入口点三
     """
-    main()
+    cli()
     

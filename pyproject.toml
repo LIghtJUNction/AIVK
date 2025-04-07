@@ -1,44 +1,23 @@
 [project]
 name = "aivk"
 version = "0.2.0"
-description = "AIVK - AI Virtual Kernel"
+description = "AIVK is virtual Kernel for AI, which is a lightweight and extensible framework for building AI applications."
 readme = "README.md"
 authors = [
-    {name = "LIghtJUNction", email = "LIghtJUNction.me@gmail.com"}
+    { name = "LIghtJUNction", email = "lightjunction.me@gmail.com" }
 ]
-license = "MIT"
 
-requires-python = ">=3.9"
+requires-python = ">=3.13"
 dependencies = [
-    "async>=0.6.2",
-    "toml>=0.10.2",
-    "rich>=14.0.0",
+    "click>=8.1.8",
     "pydantic>=2.11.2",
+    "rich>=14.0.0",
+    "toml>=0.10.2",
 ]
 
 [project.scripts]
 aivk = "aivk.cli.__main__:main"
-aivk-load = "aivk.onLoad.__main__:main"
-aivk-unload = "aivk.onUnload.__main__:main"
-aivk-install = "aivk.onInstall.__main__:main"
-aivk-uninstall = "aivk.onUninstall.__main__:main"
-aivk-update = "aivk.cli.__main__:update"
 
-
-# GUIDE
-# aivk-<moduleID>
-# aivk-<moduleID>-load
-# aivk-<moduleID>-unload
-# aivk-<moduleID>-install
-# aivk-<moduleID>-uninstall
-# thank you for using AIVK
-
-# aivk-<moduleID> -h = aivk <moduleID> -h
-# aivk-<moduleID>-load -h = aivk <moduleID> load = aivk <moduleID> load -h
-# ...
-
-# aivk <moduleID> -h = aivk-<moduleID> -h
-
-# aivk install = aivk-install
-
-
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
