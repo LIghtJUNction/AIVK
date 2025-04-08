@@ -1,34 +1,39 @@
-import asyncio
+# -*- coding: utf-8 -*-
 import logging
-from typing import Any, Dict
-from aivk.logger import setup_logging
+from typing import Any, Dict, NoReturn
+
+from aivk.base.exceptions import AivkModuleError
+from ..logger import setup_logging
+from ..base.utils import AivkExecuter
 
 setup_logging(style="panel")  # 使用面板样式
 logger = logging.getLogger("aivk.onUninstall")
 
-async def uninstall(**kwargs) -> bool:
-    """
-    入口点一：aivk uninstall
+async def uninstall(
+    **kwargs: Dict[str, Any]
+) -> NoReturn:
+    """卸载模块入口点
+    
+    Args:
+        id: 要卸载的模块ID
+        **kwargs: 其他卸载参数
+        
+    Returns:
+        NoReturn: 卸载是否成功
     """
     logger.info("Uninstalling ...")
-    # 卸载核心模块...
-    # 根据配置来卸载核心组件
-
-    return True
-
-def cli() -> None:
-    """终端：aivk-uninstall
-    入口点二
-    """
-    # TODO: 通过命令行参数获取并传递参数
-    kwargs = {}
     
-    asyncio.run(uninstall(**kwargs))
+    id = kwargs.get("id", "fs")
 
-
+    if id.startswith("aivk-"):
+        logger.error("模块 ID 不应包含 'aivk-' 前缀, 示例：aivk-fs 模块id 应为 fs ， aivk-fs 为pypi包名")
+        raise AivkModuleError(id=id, operation="uninstall", message="模块 ID 不应包含 'aivk-' 前缀")
+    
+    await AivkExecuter.aexec(command=f"uv pip uninstall aivk-{id}")
+    
+    logger.info(f"Successfully uninstalled module: {id}")
+    
 if __name__ == "__main__":
-    """python -m aivk.onUninstall
-    入口点三
-    """
-    cli()
-
+    # 直接运行时，执行卸载
+    import asyncio
+    asyncio.run(uninstall())

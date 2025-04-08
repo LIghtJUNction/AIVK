@@ -1,33 +1,34 @@
-import asyncio
+# -*- coding: utf-8 -*-
 import logging
-from typing import Any, Dict
-from aivk.logger import setup_logging
+from typing import Any, Dict, NoReturn
+
+from ..logger import setup_logging
+from ..base.utils import AivkExecuter
 
 setup_logging(style="panel")  # 使用面板样式
 logger = logging.getLogger("aivk.onUpdate")
 
-async def update(**kwargs) -> bool:
-    """
-    入口点一：aivk update
-    """
-    logger.info("Updating ...")
-    # 更新核心模块...
-    # 根据配置来更新核心组件
-
-    return True
-
-def cli() -> None:
-    """终端：aivk-update
-    入口点二
-    """
-    # TODO: 通过命令行参数获取并传递参数
-    kwargs = {}
+async def update(
+    id: str = "fs",
+    **kwargs: Dict[str, Any]
+) -> NoReturn:
+    """更新模块入口点
     
-    asyncio.run(update(**kwargs))
+    Args:
+        id: 要更新的模块ID
+        **kwargs: 其他更新参数
+        
+    Returns:
+        NoReturn
+    """
 
+    logger.info("Updating ...")
+
+    await AivkExecuter.aexec(command=f"uv pip install --upgrade aivk-{id}")
+
+    logger.info(f"Successfully updated module: {id}")
 
 if __name__ == "__main__":
-    """python -m aivk.onUpdate
-    入口点三
-    """
-    cli()
+    # 直接运行时，执行更新
+    import asyncio
+    asyncio.run(update())

@@ -1,34 +1,33 @@
-import asyncio
+# -*- coding: utf-8 -*-
 import logging
-from typing import Any, Dict
-from aivk.logger import setup_logging
-
+from typing import Any, Dict, NoReturn
+from ..logger import setup_logging
+from ..base.utils import AivkExecuter
 setup_logging(style="panel")  # 使用面板样式
 logger = logging.getLogger("aivk.onInstall")
 
-async def install(**kwargs) -> bool:
-    """
-    入口点一：aivk install
-    """
-    logger.info("Installing ...")
-    # 安装核心模块...
-    # 根据配置来安装核心组件
-
-    return True
-
-def cli() -> None:
-    """终端：aivk-install
-    入口点二
-    """
-    # TODO: 通过命令行参数获取并传递参数
-    kwargs = {}
+async def install(
+    **kwargs: Dict[str, Any]
+) -> NoReturn:
+    """安装模块入口点
     
-    asyncio.run(install(**kwargs))
+    Args:
+        **kwargs: id
+        
+    Returns:
+        NoReturn
+    """
+    id = kwargs.get("id", "fs")
+    if id.startswith("aivk-"):
+        logger.error("模块 ID 不应包含 'aivk-' 前缀, 示例：aivk-fs 模块id 应为 fs ， aivk-fs 为pypi包名")
 
+    logger.info("Installing ...")
+
+    await AivkExecuter.aexec(command=f"uv pip install aivk-{id}")
+
+    logger.info(f"Installation of aivk-{id} completed.")
 
 if __name__ == "__main__":
-    """python -m aivk.onInstall
-    入口点三
-    """
-    cli()
-    
+    # 直接运行时，执行安装
+    import asyncio
+    asyncio.run(install())

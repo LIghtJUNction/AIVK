@@ -1,10 +1,17 @@
-__version__ = "0.2.0"
-__author__ = "LIghtJUNction"
-__license__ = "MIT"
-__description__ = "AIVK - AI Virtual Kernel"
-__copyright__ = "Copyright (c) 2025 LIghtJUNction"
-__email__ = "lightjunction.me@gmail.com"
-__github__ = "https://github.com/LIghtJUNction/AIVK"
+# -*- coding: utf-8 -*-
+# aivk - module
+__id__ : str = "aivk"
+__name__ : str = "AIVK"
+__version__ : str = "0.2.1"
+__versionCode: int = 25040901
+__author__ : str = "LIghtJUNction"
+__license__ : str = "MIT"
+__description__ : str = "AIVK - AI Virtual Kernel"
+
+# github
+__copyright__ : str = "Copyright (c) 2025 LIghtJUNction"
+__email__ : str = "lightjunction.me@gmail.com"
+__github__ : str = "https://github.com/LIghtJUNction/AIVK"
 
 
 # ASCII艺术字和其他常量定义

@@ -11,15 +11,3 @@ setup_logging(
     show_path=True      # 显示文件路径，方便调试
 )
 
-from .onInstall import install
-from .onLoad import load
-from .onUninstall import uninstall
-from .onUnload import unload
-
-__all__ = [
-    "install",
-    "load",
-
-    "uninstall",
-    "unload",
-]

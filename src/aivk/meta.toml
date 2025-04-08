@@ -1,29 +1,20 @@
-# move it to aivk_root_dir / meta.toml
-
-type = "aivk"  # 模块类型 aivk / core / module / modules / 
-
-# dir / modules / meta.toml : core / module 
-# dir / meta.toml : aivk  aivk is a special module type & meta module & root module , use the root dir / meta.toml
-
-# 基本信息
-[aivk] # type aivk
-id = "aivk"  # 模块唯一标识符 (建议命名：小写-连字符-英文 项目建议命名为 aivk-moduleID 避免重名 )
-name = "aivk"  # 模块名称
-version = "0.1.0"  # 版本号
-versionCode = 25040301  # 版本编码
-description = "AIVK - AI Virtual Kernel"  # 模块描述
-author = "LIghtJUNction"  # 作者
-license = "MIT"  # 许可证
-
-# 依赖配置
-# dependencies = []  # 模块依赖列表
-
-[aivk.root]
-path = "/path/to/aivk_root" # aivk_root_dir
-
+# AIVK Meta Configuration
 [modules]
-# if type == modules
-# moduleID以及刷入顺序 -- 批量刷入时使用
-# 先核心 后前置 最后一般
+# installed modules configuration
+installed = [
+    # Format: "<module_id> = { version = "<version>", enabled = true/false }"
+]
 
+[core]
+# core modules status
+fs = { version = "0.1.0", enabled = true }
+ai = { version = "0.1.0", enabled = false }
+loader = { version = "0.1.0", enabled = true }
+messenger = { version = "0.1.0", enabled = false }
+scheduler = { version = "0.1.0", enabled = false }
+webui = { version = "0.1.0", enabled = false }
 
+[settings]
+# meta configuration settings
+auto_enable = true  # automatically enable newly installed modules
+track_versions = true  # track module versions
