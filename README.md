@@ -6,6 +6,10 @@ AIVK 是一个模块化的 AI 应用开发框架，提供完整的生态系统�
 AIVK is a modular AI application development framework with complete ecosystem support.  
 AIVK はモジュール式 AI アプリケーション開発フレームワークで、完全なエコシステムをサポートします。
 
+开发中...
+本说明文档由AI总结并自动编写而成
+源代码由人类把关，但凡不好的设计，都直接打回重构了
+
 ## 特性 | Features | 機能
 
 - 模块化架构 | Modular Architecture | モジュール式アーキテクチャ
