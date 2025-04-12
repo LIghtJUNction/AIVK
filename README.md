@@ -7,5 +7,8 @@
 # AIVK MODULE 规范
 
 1. AIVK MODULE is a pypi package.
-2. AIVK MODULE base on MCP.
-
+2. AIVK MODULE is based on MCP.
+3. AIVK MODULE 遵循以下命名规则:
+   - PyPI 包名: `aivk_{id}` (例如 `aivk_fs`)
+   - 导入名称: `aivk_{id}` (例如 `import aivk_fs`)
+   
