@@ -1,31 +1,14 @@
 [project]
 name = "aivk"
-version = "0.2.4"
-description = "AIVK is virtual Kernel for AI, which is a lightweight and extensible framework for building AI applications."
+version = "0.1.0"
+description = "Add your description here"
 readme = "README.md"
 authors = [
     { name = "LIghtJUNction", email = "lightjunction.me@gmail.com" }
 ]
-
-requires-python = ">=3.13"
-dependencies = [
-    "anytree>=2.13.0",
-    "click>=8.1.8",
-    "pydantic>=2.11.2",
-    "requests>=2.32.3",
-    "rich>=14.0.0",
-    "setuptools>=78.1.0",
-    "toml>=0.10.2",
-]
-
-[project.scripts]
-aivk = "aivk.onCli.__main__:cli"
-
-[project.urls]
-homepage = "https://github.com/LIghtJUNction/AIVK"
+requires-python = ">=3.11"
+dependencies = []
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
-
-

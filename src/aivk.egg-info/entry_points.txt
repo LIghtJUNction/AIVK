@@ -1,7 +1,0 @@
-[console_scripts]
-aivk = aivk.cli.__main__:main
-aivk-install = aivk.onInstall.__main__:main
-aivk-load = aivk.onLoad.__main__:main
-aivk-uninstall = aivk.onUninstall.__main__:main
-aivk-unload = aivk.onUnload.__main__:main
-aivk-update = aivk.cli.__main__:update
