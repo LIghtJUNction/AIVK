@@ -39,7 +39,8 @@ source aivk-env/bin/activate
 pip install aivk
 
 # 验证安装 | Verify installation | インストールの確認
-aivk version
+aivk --version # 或 aivk version
+# 应输出类似: aivk, version 0.2.3
 ```
 
 ### 3. 初始配置 | Initial Setup | 初期設定
@@ -60,29 +61,33 @@ export AIVK_ROOT=~/.aivk
 ### 模块管理 | Module Management | モジュール管理
 
 ```bash
-# 列出可用模块 | List available modules | 利用可能なモジュールを一覧表示
+# 列出已安装模块 | List installed modules | インストール済みモジュールを一覧表示
 aivk list
 
-# 安装核心模块 | Install core modules | コアモジュールをインストール
-aivk install fs
-aivk install net
-aivk install ai
+# 安装模块 | Install module | モジュールをインストール
+aivk install <module_id>
+# 例如: aivk install fs
 
-# 查看模块状态 | Check module status | モジュールの状態を確認
-aivk list --installed
+# 卸载模块 | Uninstall module | モジュールをアンインストール
+aivk uninstall <module_id>
+# 例如: aivk uninstall fs
+
+# 更新所有模块 | Update all modules | すべてのモジュールを更新
+aivk update
 ```
 
-### 加载模块 | Loading Modules | モジュールのロード
+### 加载与卸载 | Loading & Unloading | ロードとアンロード
 
 ```bash
-# 加载所有模块 | Load all modules | すべてのモジュールをロード
+# 加载/初始化 AIVK (指定根路径) | Load/Initialize AIVK (specify root path) | AIVKのロード/初期化 (ルートパス指定)
+aivk load --path /path/to/your/aivk/root
+# 或使用默认路径 ~/.aivk
 aivk load
 
-# 加载特定模块 | Load specific module | 特定のモジュールをロード
-aivk load --module fs
-
-# 检查加载状态 | Check load status | ロード状態を確認
-aivk list --enabled
+# 卸载/取消挂载 AIVK (指定根路径) | Unload/Unmount AIVK (specify root path) | AIVKのアンロード/アンマウント (ルートパス指定)
+aivk unload --path /path/to/your/aivk/root
+# 或使用默认路径 ~/.aivk
+aivk unload
 ```
 
 ### 基本操作 | Basic Operations | 基本操作
@@ -90,13 +95,13 @@ aivk list --enabled
 ```bash
 # 显示帮助 | Show help | ヘルプを表示
 aivk help
-aivk help <command>
+aivk help <command> # 例如: aivk help install
 
 # 检查版本 | Check version | バージョンを確認
-aivk version
+aivk --version # 或 aivk version
 
-# 查看状态 | Check status | 状態を確認
-aivk status
+# 查看状态 (如果 status 命令存在) | Check status (if status command exists) | 状態を確認 (status コマンドが存在する場合)
+# aivk status # 当前未在 onCli/__main__.py 中定义
 ```
 
 ## 配置指南 | Configuration Guide | 設定ガイド
@@ -174,5 +179,5 @@ chmod -R 755 ~/.aivk
    - [开发指南](./development.md)
 
 3. 参与社区 | Join Community | コミュニティに参加
-   - [GitHub讨论](https://github.com/yourusername/aivk/discussions)
-   - [问题追踪](https://github.com/yourusername/aivk/issues)
+   - [GitHub讨论](https://github.com/LIghtJUNction/AIVK/discussions) # 更新链接
+   - [问题追踪](https://github.com/LIghtJUNction/AIVK/issues) # 更新链接

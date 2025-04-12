@@ -1,1 +1,4 @@
 src/aivk/llms/Meta.toml
+*.pyc
+copilot/
+.*/

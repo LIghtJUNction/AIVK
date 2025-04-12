@@ -12,24 +12,18 @@
 """
 
 from rich.logging import RichHandler
-from rich.console import Console
+from rich.console import Console, RenderableType # Import RenderableType
 from rich.theme import Theme
 from rich.panel import Panel
 from rich.table import Table
 from rich.progress import Progress, SpinnerColumn, TextColumn
-from rich.markdown import Markdown
 from rich.align import Align
-from rich.layout import Layout
 from rich.text import Text
-from rich.json import JSON
 from rich.syntax import Syntax
-from rich.measure import Measurement
 from rich import box
-from rich.style import Style
-from datetime import datetime
 import logging
 import json
-from typing import Literal, Optional, Union, Dict, Any, Callable
+from typing import Literal, Optional, Union, Callable
 from rich.traceback import Traceback
 import threading
 import functools
@@ -242,14 +236,29 @@ class NotifyHandler(BaseHandler):
 class JsonHandler(BaseHandler):
     def render(self, record: logging.LogRecord, traceback: Optional[Traceback] = None, message_renderable: Union[str, Text] = "") -> Text:
         # 创建日志数据字典
+        message = {} # Initialize message as a dict
         try:
-            # 如果消息是字典，直接使用
-            message = eval(str(message_renderable))
-            if not isinstance(message, dict):
-                message = {"message": str(message_renderable)}
-        except:
-            message = {"message": str(message_renderable)}
-        
+            # Attempt to parse message_renderable if it's a string representing a dict/json
+            if isinstance(message_renderable, str):
+                try:
+                    parsed_message = json.loads(message_renderable)
+                    if isinstance(parsed_message, dict):
+                        message = parsed_message
+                    else:
+                        # If not a dict, treat as a simple message string
+                        message = {"message": str(message_renderable)}
+                except json.JSONDecodeError:
+                    # If not valid JSON, treat as a simple message string
+                    message = {"message": str(message_renderable)}
+            elif isinstance(message_renderable, dict):
+                 message = message_renderable # Use directly if already a dict
+            else:
+                 # Fallback for other types (like Text)
+                 message = {"message": str(message_renderable)}
+
+        except Exception: # Catch potential errors during processing
+            message = {"message": str(message_renderable)} # Fallback
+
         data = {
             "timestamp": self.formatter.formatTime(record),
             "level": record.levelname,
@@ -304,10 +313,7 @@ class CodeHandler(BaseHandler):
         
         # 尝试解析消息为Python代码
         message = str(message_renderable)
-        try:
-            syntax = Syntax(message, "python", theme="monokai")
-        except:
-            syntax = Text(message)
+        syntax = self.render_syntax(message)
             
         if traceback:
             syntax.append(f"\n{traceback}")
@@ -319,14 +325,20 @@ class CodeHandler(BaseHandler):
             box=box.HEAVY,
             padding=(0, 1)
         )
+    
+    def render_syntax(self, message: str) -> RenderableType: # Use imported RenderableType
+        """渲染语法高亮"""
+        try:
+            syntax = Syntax(message, "python", theme="monokai")
+        except Exception: # E722: Specify exception type
+            syntax = Text(message)
+        return syntax
 
 # 错误风格 - 适合异常追踪
 class ErrorHandler(BaseHandler):
     def render(self, record: logging.LogRecord, traceback: Optional[Traceback] = None, message_renderable: Union[str, Text] = "") -> Panel:
         style = self.get_style(record.levelno)
         icon = self.get_icon(record.levelno)
-        
-        layout = Layout()
         
         # 头部：错误类型和时间
         header = Text()
@@ -382,11 +394,7 @@ class MetricHandler(BaseHandler):
         
         # 尝试解析消息为指标数据
         message = str(message_renderable)
-        try:
-            data = json.loads(message)
-            metrics = " | ".join(f"{k}: {v}" for k, v in data.items())
-        except:
-            metrics = message
+        metrics = self.render_metrics(message)
             
         # 添加行
         table.add_row(
@@ -400,6 +408,15 @@ class MetricHandler(BaseHandler):
             table.add_row("", "", "", str(traceback))
             
         return table
+    
+    def render_metrics(self, message: str) -> RenderableType: # Use imported RenderableType
+        """渲染指标样式"""
+        try:
+            data = json.loads(message)
+            metrics = " | ".join(f"{k}: {v}" for k, v in data.items())
+        except Exception: # E722: Specify exception type
+            metrics = message
+        return Text(metrics, style="bold magenta")
 
 # 日志样式管理器
 class LoggerManager:

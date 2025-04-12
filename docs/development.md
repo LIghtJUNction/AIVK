@@ -26,16 +26,51 @@ sphinx = "^5.0.0"            # 文档生成 | Doc generator | ドキュメント
 ### 目录结构 | Directory Structure | ディレクトリ構造
 
 ```
-my-module/
+aivk-mymodule/             # 模块包名 (例如 aivk-fs)
 ├── pyproject.toml           # 项目配置 | Project config | プロジェクト設定
 ├── README.md               # 文档 | Documentation | ドキュメント
 ├── tests/                 # 测试 | Tests | テスト
 └── src/
-    └── aivk_mymodule/
+    └── aivk_mymodule/     # Python 包名 (例如 aivk_fs)
         ├── __init__.py
-        ├── onLoad/        # 加载处理 | Load handling | ロード処理
-        ├── onUnload/      # 卸载处理 | Unload handling | アンロード処理
-        └── core/          # 核心代码 | Core code | コアコード
+        ├── onCli/         # (可选) 提供 CLI 子命令 | (Optional) Provides CLI subcommand | (オプション) CLIサブコマンドを提供
+        │   └── __main__.py # 定义 click.Group/Command
+        ├── onLoad/        # (可选) 加载处理 | (Optional) Load handling | (オプション) ロード処理
+        │   └── __main__.py # 定义 async def load(...)
+        ├── onUnload/      # (可选) 卸载处理 | (Optional) Unload handling | (オプション) アンロード処理
+        │   └── __main__.py # 定义 async def unload(...)
+        ├── onInstall/     # (可选) 安装处理 | (Optional) Install handling | (オプション) インストール処理
+        │   └── __main__.py # 定义 async def install(...)
+        ├── onUninstall/   # (可选) 卸载处理 | (Optional) Uninstall handling | (オプション) アンインストール処理
+        │   └── __main__.py # 定义 async def uninstall(...)
+        ├── onUpdate/      # (可选) 更新处理 | (Optional) Update handling | (オプション) 更新処理
+        │   └── __main__.py # 定义 async def update(...)
+        └── core/          # (可选) 核心代码 | (Optional) Core code | (オプション) コアコード
+```
+
+### 命令行集成 | Command Line Integration | コマンドライン統合
+
+AIVK 使用 `click` 库构建命令行界面。核心 CLI (`aivk`) 可以动态加载其他模块提供的子命令。
+
+- **动态加载**: `AivkCLI.AivkGroup` 类在 `get_command` 方法中尝试加载未知的命令。它会调用 `AivkCLI.on(action="cli", id=cmd_name)`。
+- **模块实现**: 如果你的模块 (例如 `aivk-mymodule`) 需要提供一个子命令 `aivk mymodule ...`，你需要在 `aivk_mymodule/onCli/__main__.py` 文件中定义一个名为 `cli` 的 `click.Group` 或 `click.Command` 对象。
+
+```python
+# src/aivk_mymodule/onCli/__main__.py
+import click
+
+@click.group()
+def cli():
+    """MyModule's CLI commands."""
+    pass
+
+@cli.command()
+@click.option('--name', default='World', help='Who to greet.')
+def greet(name):
+    """Greets the user."""
+    click.echo(f"Hello from MyModule, {name}!")
+
+# AivkGroup 会尝试导入 aivk-mymodule.onCli 并获取 cli 对象
 ```
 
 ### 模块基类 | Module Base Class | モジュール基底クラス
@@ -108,20 +143,30 @@ async def test_unload(module):
 ```python
 # test_integration.py
 import pytest
-from aivk.base import aivk_on
+# 假设 aivk_cli 是 AivkCLI 的实例
+# from aivk.onCli.__main__ import aivk as aivk_cli
 
 async def test_module_lifecycle():
     """
     测试模块生命周期 | Test module lifecycle | モジュールのライフサイクルをテスト
     """
-    # 安装 | Install | インストール
-    await aivk_on("install", "mymodule")
-    
-    # 加载 | Load | ロード
-    await aivk_on("load", "mymodule")
-    
-    # 卸载 | Unload | アンロード
-    await aivk_on("unload", "mymodule")
+    # 获取操作函数
+    install_func = aivk_cli.on("install", "aivk") # 使用 aivk 作为示例 ID
+    load_func = aivk_cli.on("load", "aivk")
+    unload_func = aivk_cli.on("unload", "aivk")
+    uninstall_func = aivk_cli.on("uninstall", "aivk")
+
+    # 安装 (假设 install 函数接受 id)
+    await install_func(id="mymodule")
+
+    # 加载 (假设 load 函数接受 path)
+    await load_func(path="~/.aivk") # 示例路径
+
+    # 卸载 (假设 unload 函数接受 path)
+    await unload_func(path="~/.aivk") # 示例路径
+
+    # 卸载 (假设 uninstall 函数接受 id)
+    await uninstall_func(id="mymodule")
 ```
 
 ## 发布流程 | Release Process | リリースプロセス
@@ -229,3 +274,4 @@ import pdb; pdb.set_trace()
 1. 改进现有文档 | Improve existing docs | 既存のドキュメントを改善
 2. 添加示例 | Add examples | 例を追加
 3. 修复错误 | Fix errors | エラーを修正
+4. 翻译文档 | Translate documentation | ドキュメントを翻訳

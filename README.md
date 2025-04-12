@@ -20,8 +20,11 @@ AIVK はモジュール式 AI アプリケーション開発フレームワー�
 # 从 PyPI 安装 | Install from PyPI | PyPIからインストール
 pip install aivk
 
+# 验证安装 | Verify installation | インストールの確認
+aivk --version # 或者 aivk version (取决于 click 如何处理)
+
 # 从源码安装 | Install from source | ソースからインストール
-git clone https://github.com/yourusername/aivk.git
+git clone https://github.com/LIghtJUNction/AIVK.git # 更新为正确的用户名/仓库
 cd aivk
 pip install -e .
 ```
@@ -33,12 +36,26 @@ pip install -e .
 ```bash
 # 显示帮助 | Show help | ヘルプを表示
 aivk --help
+aivk help
+aivk help <command> # 显示特定命令的帮助
+
+# 列出已安装模块 | List installed modules | インストール済みモジュールを一覧表示
+aivk list
 
 # 安装模块 | Install module | モジュールをインストール
-aivk install fs
+aivk install <module_id>
 
-# 加载模块 | Load module | モジュールをロード
-aivk load
+# 卸载模块 | Uninstall module | モジュールをアンインストール
+aivk uninstall <module_id>
+
+# 加载/初始化 (带路径) | Load/Initialize (with path) | ロード/初期化 (パス指定)
+aivk load --path <path_to_aivk_root>
+
+# 卸载/取消挂载 (带路径) | Unload/Unmount (with path) | アンロード/アンマウント (パス指定)
+aivk unload --path <path_to_aivk_root>
+
+# 更新模块 | Update modules | モジュールを更新
+aivk update
 ```
 
 ### 配置 | Configuration | 設定
@@ -121,9 +138,9 @@ This project is licensed under the MIT License.
 
 ## 联系我们 | Contact Us | お問い合わせ
 
-- 问题追踪 | Issue Tracker: https://github.com/yourusername/aivk/issues
-- 电子邮件 | Email: your.email@example.com
-- 讨论区 | Discussions: https://github.com/yourusername/aivk/discussions
+- 问题追踪 | Issue Tracker: https://github.com/LIghtJUNction/AIVK/issues # 更新为正确的用户名/仓库
+- 电子邮件 | Email: lightjunction.me@gmail.com # 更新为 __about__.py 中的邮箱
+- 讨论区 | Discussions: https://github.com/LIghtJUNction/AIVK/discussions # 更新为正确的用户名/仓库
 
 
 

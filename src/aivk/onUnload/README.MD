@@ -9,18 +9,15 @@ AIVK モジュールを安全にアンロードし、リソースをクリーン
 ## Command Usage | 命令用法 | コマンド使用法
 
 ```bash
-# Unload all | 卸载所有 | すべてアンロード
+# Unload with default path (~/.aivk) | 使用默认路径卸载 | デフォルトパスでアンロード
 aivk unload
 
-# Unload specific module | 卸载指定模块 | 特定モジュールをアンロード
-aivk unload --module <module_id>
-
-# Force unload | 强制卸载 | 強制アンロード
-aivk unload --force
-
-# Graceful shutdown | 优雅关闭 | 正常シャットダウン
-aivk unload --graceful
+# Unload with specific path | 指定路径卸载 | パスを指定してアンロード
+aivk unload --path /path/to/aivk
+# 或使用 -p
+aivk unload -p /path/to/aivk
 ```
+*注意：* 当前 CLI 实现不支持 `--module`, `--force`, `--graceful` 参数。
 
 ## Process Flow | 处理流程 | 処理フロー
 
@@ -40,12 +37,16 @@ retry = 3            # Retry attempts | 重试次数 | 再試行回数
 
 ## API Reference | API 参考 | API リファレンス
 
+实际的 `unload` 函数由 `aivk.on("unload", "aivk")` 动态加载。根据 `onCli/__main__.py` 中的调用，其签名应接受 `path` 参数。
+The actual `unload` function is dynamically loaded via `aivk.on("unload", "aivk")`. Based on the call in `onCli/__main__.py`, its signature should accept a `path` argument.
+実際の `unload` 関数は `aivk.on("unload", "aivk")` を介して動的にロードされます。`onCli/__main__.py` での呼び出しに基づくと、そのシグネチャは `path` 引数を受け入れる必要があります。
+
 ```python
+# 预期的签名 | Expected signature
 async def unload(
-    module_id: Optional[str] = None,  # Module ID | 模块ID | モジュールID
-    force: bool = False,              # Force unload | 强制卸载 | 強制アンロード
-    timeout: int = 30                 # Timeout seconds | 超时秒数 | タイムアウト秒数
-) -> bool:
+    path: str,              # AIVK root path | AIVK根路径 | AIVKルートパス
+    **kwargs: Dict[str, Any] # 捕获其他可能的参数 | Capture other possible args
+) -> Any: # 返回类型未知 | Return type unknown
     """
     Unload module(s) | 卸载模块 | モジュールをアンロード
     """

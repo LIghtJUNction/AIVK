@@ -5,7 +5,7 @@ from typing import Any, Dict, NoReturn
 from aivk.base.exceptions import AivkModuleError
 from ..logger import setup_logging
 from ..base.utils import AivkExecuter
-
+from ..base.cli import AivkCLI
 setup_logging(style="panel")  # 使用面板样式
 logger = logging.getLogger("aivk.onUninstall")
 
@@ -24,6 +24,8 @@ async def uninstall(
     logger.info("Uninstalling ...")
     
     id = kwargs.get("id", "fs")
+
+    AivkCLI._validate_id(id)
 
     if id.startswith("aivk-"):
         logger.error("模块 ID 不应包含 'aivk-' 前缀, 示例：aivk-fs 模块id 应为 fs ， aivk-fs 为pypi包名")

@@ -2,8 +2,8 @@
 # aivk - module
 __id__ : str = "aivk"
 __name__ : str = "AIVK"
-__version__ : str = "0.2.1"
-__versionCode: int = 25040901
+__version__ : str = "0.2.4"
+__versionCode: int = 25041202
 __author__ : str = "LIghtJUNction"
 __license__ : str = "MIT"
 __description__ : str = "AIVK - AI Virtual Kernel"

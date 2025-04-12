@@ -50,21 +50,68 @@ async def aexec(
 
 ### aivk_on | AIVK操作 | AIVK操作
 
-统一的模块操作函数。  
-Unified module operation function.  
-統一モジュール操作関数。
+从 `AivkCLI` 类调用的方法，用于动态获取特定操作的函数。  
+Method called from `AivkCLI` class to dynamically get the function for a specific action.  
+`AivkCLI` クラスから呼び出され、特定のアクションに対応する関数を動的に取得するメソッド。
 
 ```python
-async def aivk_on(
-    action: Literal["load", "unload", "install", "uninstall", "update"],
-    id: str,
-    **kwargs: Dict[str, Any]
-) -> Any:
+# 在 base/cli.py 中定义
+@classmethod
+def on(cls, action: str, id: str) -> callable:
     """
-    执行模块操作。
-    Execute module operation.
-    モジュール操作を実行します。
+    动态导入并返回指定模块和操作的函数。
+    Dynamically imports and returns the function for the specified module and action.
+    指定されたモジュールとアクションの関数を動的にインポートして返します。
+
+    Args:
+        action (str): 操作名称 (如 "load", "unload", "install", "cli")。 | Action name (e.g., "load", "unload", "install", "cli"). | アクション名（例：「load」、「unload」、「install」、「cli」）。
+        id (str): 模块 ID (如 "aivk", "fs")。 | Module ID (e.g., "aivk", "fs"). | モジュールID（例：「aivk」、「fs」）。
+
+    Returns:
+        callable: 对应操作的函数。 | The function for the corresponding action. | 対応するアクションの関数。
+
+    Raises:
+        ImportError: 如果模块或函数无法导入。 | If the module or function cannot be imported. | モジュールまたは関数をインポートできない場合。
+        ValueError: 如果 ID 无效。 | If the ID is invalid. | IDが無効な場合。
     """
+    # ... 实现细节 ...
+```
+
+*注意：* `onCli/__main__.py` 中使用的 `aivk.on(...)` 是 `AivkCLI` 实例上的调用，它内部使用了上述类方法。
+
+### AivkCLI | AIVK命令行接口基类 | AIVKコマンドラインインターフェース基底クラス
+
+用于构建命令行节点树的基础模型。  
+Base model for building the command-line node tree.  
+コマンドラインノードツリーを構築するための基本モデル。
+
+```python
+# 定义在 base/cli.py
+class AivkCLI(BaseModel, NodeMixin):
+    cli_parent : Optional["AivkCLI"] = None # 父节点 | Parent node | 親ノード
+    nodes : dict[str, "AivkCLI"] = {}     # 子节点字典 | Child node dictionary | 子ノード辞書
+    id: str                               # 节点 ID | Node ID | ノードID
+    cli: Optional[click.Group] = None     # Click 命令组 | Click command group | Clickコマンドグループ
+
+    # ... 其他方法和配置 ...
+```
+
+### AivkGroup | AIVK命令组 | AIVKコマンドグループ
+
+自定义的 `click.Group`，支持动态加载命令。  
+Custom `click.Group` that supports dynamic command loading.  
+動的なコマンドロードをサポートするカスタム `click.Group`。
+
+```python
+# 定义在 base/cli.py
+class AivkGroup(click.Group):
+    def list_commands(self, ctx):
+        # ... 列出命令 ...
+        pass
+
+    def get_command(self, ctx, cmd_name):
+        # ... 获取命令，如果不存在则尝试通过 AivkCLI.on(action="cli", id=cmd_name) 动态加载 ...
+        pass
 ```
 
 ## 异常类 | Exception Classes | 例外クラス
@@ -228,6 +275,22 @@ await aivk_on("load", "fs", path="/path/to/modules")
 
 # 安装模块 | Install module | モジュールをインストール
 await aivk_on("install", "net", version="1.0.0")
+
+# onCli/__main__.py 中的示例用法
+# 获取 load 函数
+load_func = aivk.on("load", "aivk")
+# 调用函数
+asyncio.run(load_func(path="/path/to/modules"))
+
+# 获取 install 函数
+install_func = aivk.on("install", "aivk")
+# 调用函数
+asyncio.run(install_func(id="net"))
+
+# 获取 list 函数
+list_func = aivk.on("list", "aivk")
+# 调用函数
+asyncio.run(list_func())
 ```
 
 ### 错误处理 | Error Handling | エラー処理

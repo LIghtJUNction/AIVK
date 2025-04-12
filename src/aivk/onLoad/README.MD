@@ -13,18 +13,15 @@ aivk.load -> aivk-loader.load -> other_modules.load
 ## Commands | 命令 | コマンド
 
 ```bash
-# Basic load | 基本加载 | 基本ロード
+# Load with default path (~/.aivk) | 使用默认路径加载 | デフォルトパスでロード
 aivk load
 
-# Load with path | 指定路径加载 | パスを指定してロード
+# Load with specific path | 指定路径加载 | パスを指定してロード
 aivk load --path /path/to/aivk
-
-# Load specific module | 加载指定模块 | 特定モジュールをロード
-aivk load --module module_id
-
-# Silent load | 静默加载 | サイレントロード
-aivk load --quiet
+# 或使用 -p
+aivk load -p /path/to/aivk
 ```
+*注意：* 当前 CLI 实现不支持 `--module` 和 `--quiet` 参数。
 
 ## Configuration | 配置 | 設定
 
@@ -57,12 +54,16 @@ order = [            # Load order | 加载顺序 | ロード順序
 
 ## API | 接口 | API
 
+实际的 `load` 函数由 `aivk.on("load", "aivk")` 动态加载。根据 `onCli/__main__.py` 中的调用，其签名应接受 `path` 参数。
+The actual `load` function is dynamically loaded via `aivk.on("load", "aivk")`. Based on the call in `onCli/__main__.py`, its signature should accept a `path` argument.
+実際の `load` 関数は `aivk.on("load", "aivk")` を介して動的にロードされます。`onCli/__main__.py` での呼び出しに基づくと、そのシグネチャは `path` 引数を受け入れる必要があります。
+
 ```python
+# 预期的签名 | Expected signature
 async def load(
-    path: Optional[str] = None,     # AIVK root path | AIVK根路径 | AIVKルートパス
-    module: Optional[str] = None,   # Module to load | 要加载的模块 | ロードするモジュール
-    **kwargs: Dict[str, Any]        # Extra options | 额外选项 | 追加オプション
-) -> bool:
+    path: str,              # AIVK root path | AIVK根路径 | AIVKルートパス
+    **kwargs: Dict[str, Any] # 捕获其他可能的参数 | Capture other possible args
+) -> Any: # 返回类型未知 | Return type unknown
     """
     Load AIVK system or modules | 加载AIVK系统或模块 | AIVKシステム/モジュールをロード
     """

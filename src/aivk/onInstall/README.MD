@@ -9,18 +9,11 @@ This module manages AIVK module installation and package management.
 ## Commands | 命令 | コマンド
 
 ```bash
-# Install module | 安装模块 | モジュールをインストール
+# Install module by ID | 按 ID 安装模块 | IDでモジュールをインストール
 aivk install <module_id>
-
-# Install with specific version | 安装指定版本 | 特定バージョンをインストール
-aivk install <module_id>@<version>
-
-# Install from local file | 从本地文件安装 | ローカルファイルからインストール
-aivk install --file <path/to/package>
-
-# Install all dependencies | 安装所有依赖 | すべての依存関係をインストール
-aivk install --all
+# 例如: aivk install fs
 ```
+*注意：* 当前 CLI 实现不支持 `@<version>`, `--file`, `--all` 等参数。
 
 ## Package Management | 包管理 | パッケージ管理
 
@@ -73,6 +66,24 @@ async def setup_config():
 class CustomInstaller:
     """
     Custom installation logic | 自定义安装逻辑 | カスタムインストールロジック
+    """
+    pass
+```
+
+## API | 接口 | API
+
+实际的 `install` 函数由 `aivk.on("install", "aivk")` 动态加载。根据 `onCli/__main__.py` 中的调用，其签名应接受 `id` 参数。
+The actual `install` function is dynamically loaded via `aivk.on("install", "aivk")`. Based on the call in `onCli/__main__.py`, its signature should accept an `id` argument.
+実際の `install` 関数は `aivk.on("install", "aivk")` を介して動的にロードされます。`onCli/__main__.py` での呼び出しに基づくと、そのシグネチャは `id` 引数を受け入れる必要があります。
+
+```python
+# 预期的签名 | Expected signature
+async def install(
+    id: str,                # Module ID to install | 要安装的模块ID | インストールするモジュールID
+    **kwargs: Dict[str, Any] # 捕获其他可能的参数 | Capture other possible args
+) -> Any: # 返回类型未知 | Return type unknown
+    """
+    Install module | 安装模块 | モジュールをインストール
     """
     pass
 ```

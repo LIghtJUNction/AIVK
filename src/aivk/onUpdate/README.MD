@@ -16,18 +16,10 @@ This module handles AIVK package updates.
 ## Usage | 使用方法 | 使用方法
 
 ```bash
-# Update specific module | 更新指定模块 | 特定のモジュールを更新
-aivk update <module_id>
-
-# Update all modules | 更新所有模块 | すべてのモジュールを更新
-aivk update --all
-
-# Check for updates | 检查更新 | 更新を確認
-aivk update --check
-
-# Rollback to previous version | 回滚到之前版本 | 以前のバージョンにロールバック
-aivk update --rollback <module_id>
+# Update all modules (当前实现) | Update all modules (current implementation) | すべてのモジュールを更新 (現在の実装)
+aivk update
 ```
+*注意：* 当前 CLI 实现不支持 `<module_id>`, `--all`, `--check`, `--rollback` 等参数。文档中的其他用法可能代表预期功能而非当前实现。
 
 ## Configuration | 配置说明 | 設定
 
@@ -59,17 +51,21 @@ check_interval = 24  # Hours | 小时 | 時間
 
 ### API | 接口 | API
 
+实际的 `update` 函数由 `aivk.on("update", "aivk")` 动态加载。根据 `onCli/__main__.py` 中的调用，其当前签名不接受参数。
+The actual `update` function is dynamically loaded via `aivk.on("update", "aivk")`. Based on the call in `onCli/__main__.py`, its current signature accepts no arguments.
+実際の `update` 関数は `aivk.on("update", "aivk")` を介して動的にロードされます。`onCli/__main__.py` での呼び出しに基づくと、現在のシグネチャは引数を受け入れません。
+
 ```python
+# 预期的签名 (基于 CLI) | Expected signature (based on CLI)
 async def update(
-    module_id: str,      # Module ID | 模块ID | モジュールID
-    version: str = None, # Target version | 目标版本 | 対象バージョン
-    force: bool = False  # Force update | 强制更新 | 強制更新
-) -> bool:
+    **kwargs: Dict[str, Any] # 捕获其他可能的参数 | Capture other possible args
+) -> Any: # 返回类型未知 | Return type unknown
     """
-    Update module | 更新模块 | モジュールを更新
+    Update module(s) | 更新模块 | モジュールを更新
     """
     pass
 ```
+*注意：* README 中原有的 API 签名 (`module_id`, `version`, `force`) 可能代表预期功能或更底层的 API，而非当前 CLI 调用的函数。
 
 ### Events | 事件 | イベント
 

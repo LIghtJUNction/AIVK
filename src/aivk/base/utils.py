@@ -1,14 +1,14 @@
 """AIVK 工具函数模块"""
 import asyncio
 import logging
-import importlib
 import subprocess
 import os
-import sys
 from asyncio.subprocess import Process
 from dataclasses import dataclass
-from typing import Dict, Any, Literal, Optional, Union, List, Tuple
+from typing import Dict, Any, Optional, Union, List, Tuple
 from datetime import datetime
+
+
 
 @dataclass
 class AivkExecResult:
@@ -215,71 +215,8 @@ class AivkExecuter:
             logger.error(f"命令执行失败: {e}")
             raise
 
-async def aivk_on(action_str: Literal["load", "unload", "install", "uninstall", "update"] | str, 
-                 id: str,
-                 **kwargs: Dict[str, Any]
-                ) -> any:
-    """统一的 AIVK 模块操作函数
-
-    Args:
-        action: 操作类型,可选值:
-              - load: 加载模块
-              - unload: 卸载模块
-              - install: 安装模块
-              - uninstall: 卸载模块
-              - update: 更新模块
-        id: 模块 ID (不包含 aivk- 前缀)
-        
-    Returns:
-        bool: 操作是否成功
-    """
-    if id.startswith("aivk-"):
-        logger.error("模块 ID 不应包含 'aivk-' 前缀, 示例：aivk-fs 模块id 应为 fs ， aivk-fs 为pypi包名")
-        return False
-
-    # aivk-fs
-    pypi_str : str = f"aivk-{id}" if id != "aivk" else "aivk"
-
-    pypi_onAction_str : str = f"{pypi_str}.on{action_str.capitalize()}"
-    logger = logging.getLogger(f"{action_str}")
-
-    if action_str not in ["load", "unload", "install", "uninstall", "update"]:
-        logger.info(f"调用拓展行为: {action_str}")
-        
-    try:
-        # 构造模块名和函数名
-        # 目标函数规范：
-        # from aivk-{id}.on{action.capitalize()} import {action}
-        # from aivk-fs.onLoad import load
-
-        # 导入模块
-        # onLoad = importlib.import_module(f"aivk-fs.onLoad")
-        onAction = importlib.import_module(pypi_onAction_str)
-        
-
-        # 获取对应函数
-        # load = getattr(onLoad, "load")
-        action : callable = getattr(onAction, action_str)
-        
-        if asyncio.iscoroutinefunction(action):
-            await action(**kwargs)
-        else:
-            action(**kwargs)
-        
-    except ImportError as e:
-        logger.error(f"无法导入模块 {id}: {e}")
-        return False
-    except AttributeError as e:
-        logger.error(f"模块 {id} 没有 {action_str} 函数: {e}")
-        return False
-    except Exception as e:
-        logger.error(f"执行 {action_str} 操作失败: {e}")
-        return False
-
-
 
 __all__ = [
-    "aivk_on",
     "AivkExecuter",
     "AivkExecResult"
 ]
