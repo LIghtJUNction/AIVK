@@ -1,0 +1,17 @@
+[metadata]
+updated = "2025-04-13 23:13:00.317862"
+
+[modules.fs]
+enabled = false
+version = "latest"
+pypi = "aivk-fs"
+
+[modules.ai]
+enabled = false
+version = "latest"
+pypi = "aivk-ai"
+
+[modules.webui]
+enabled = false
+version = "latest"
+pypi = "aivk-webui"

@@ -2,7 +2,7 @@
 # aivk - module
 __id__ : str = "aivk"
 __name__ : str = "AIVK"
-__version__ : str = "0.3.1.5"
+__version__ : str = "0.3.1.6"
 
 __author__ : str = "LIghtJUNction"
 __license__ : str = "MIT"

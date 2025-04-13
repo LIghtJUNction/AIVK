@@ -46,6 +46,10 @@ def init(path, force):
     """Initialize the AIVK root directory"""
     try:
         path_obj = Path(path) if path else None
+        # 如果指定了路径，先设置到 GlobalVar 中
+        if path_obj:
+            GlobalVar.set_aivk_root(path_obj)
+            
         result = asyncio.run(fs.initialize(path=path_obj, force=force))
         logger.info(f"Successfully initialized AIVK at {result}")
     except FileExistsError as e:
@@ -64,15 +68,19 @@ def mount(path, interactive, no_interactive):
     """Mount the AIVK root directory"""
     try:
         path_obj = Path(path) if path else None
+        # 如果指定了路径，先设置到 GlobalVar 中
+        if path_obj:
+            GlobalVar.set_aivk_root(path_obj)
+            
         result = asyncio.run(fs.mount(path=path_obj))
         if result:
-            logger.info("Successfully mounted AIVK")
+            logger.info(f"Successfully mounted AIVK at {GlobalVar.get_aivk_root()}")
             # 如果明确指定了 no_interactive，则不进入交互界面
             if no_interactive:
                 interactive = False
             if interactive:
                 # 进入交互式界面
-                interactive_shell(path_obj)
+                interactive_shell()  # 不再传递路径，由 GlobalVar 统一管理
     except FileNotFoundError as e:
         logger.error(str(e))
         sys.exit(1)
@@ -87,30 +95,31 @@ def shell(path):
     """Enter the interactive AIVK shell"""
     path_obj = Path(path) if path else None
     
-    # 检查是否已挂载，如果没有则先挂载
-    if not fs.is_initialized(path_obj):
+    # 如果指定了路径，先设置到 GlobalVar 中
+    if path_obj:
+        GlobalVar.set_aivk_root(path_obj)
+    
+    # 检查是否已初始化
+    if not fs.is_initialized():  # 不再传递路径参数，统一由 GlobalVar 管理
         logger.warning("AIVK is not initialized. Please run 'aivk init' first.")
         sys.exit(1)
     
     try:
         # 先确保挂载
-        asyncio.run(fs.mount(path=path_obj))
+        asyncio.run(fs.mount())  # 不再传递路径参数
         # 然后进入交互式界面
-        interactive_shell(path_obj)
+        interactive_shell()  # 不再传递路径参数
     except Exception as e:
         logger.error(f"Failed to start interactive shell: {e}")
         sys.exit(1)
 
 
-def interactive_shell(path: Optional[Path] = None):
+def interactive_shell():
     """
     AIVK 交互式命令行界面
-    
-    Args:
-        path: AIVK 根目录路径
     """
-    # 确保路径存在
-    path = path if path else fs.get_root_path()
+    # 从 GlobalVar 获取根目录路径
+    path = GlobalVar.get_aivk_root()
     
     # 显示欢迎信息
     print(__WELCOME__)
@@ -304,7 +313,8 @@ def cmd_cd(args, path):
             return True, path.parent
         
         if args == "~" or args == "/":
-            return True, fs.get_root_path()
+            # 使用 GlobalVar 获取根目录
+            return True, GlobalVar.get_aivk_root()
         
         # 尝试解析路径
         target = path / args if not args.startswith("/") else Path(args)
@@ -395,9 +405,9 @@ def cmd_mkdir(args, path):
 def status():
     """Show the status of AIVK"""
     logger.info("Checking AIVK status...")
-    # 检查是否初始化
-    root_path = fs.get_root_path()
-    initialized = fs.is_initialized(root_path)
+    # 检查是否初始化，使用 GlobalVar 获取根目录
+    root_path = GlobalVar.get_aivk_root()
+    initialized = fs.is_initialized()  # 不再传递路径参数
     
     if initialized:
         logger.info(f"AIVK is initialized at: {root_path}")
@@ -410,9 +420,26 @@ def status():
 @click.option("--transport", type=click.Choice(["stdio", "sse"]), default="stdio", help="Transport method for MCP")
 @click.option("--host", default=None, help="Host for aivk MCP server (default: localhost)")
 @click.option("--port", default=None, type=int, help="Port for aivk MCP server (default: 10140)")
+@click.option("--path", "-p", type=click.Path(), envvar="AIVK_ROOT", help="Path to the aivk root directory")
 @click.option("--save-config", is_flag=True, help="Save host and port to config file")
-def mcp(transport: str, host: str, port: int, save_config: bool):
+def mcp(transport: str, host: str, port: int, path: str, save_config: bool):
     """MCP command to handle transport methods."""
+    # 如果提供了路径，设置 AIVK 根目录
+    if path:
+        path_obj = Path(path)
+        GlobalVar.set_aivk_root(path_obj)
+        logger.info(f"使用指定的 AIVK 根目录: {path_obj}")
+    
+    # 确保 AIVK 根目录已初始化
+    root_path = GlobalVar.get_aivk_root()
+    if not fs.is_initialized():
+        logger.warning(f"AIVK 根目录 {root_path} 未初始化。尝试挂载...")
+        try:
+            asyncio.run(fs.mount())
+        except Exception as e:
+            logger.error(f"挂载 AIVK 根目录失败: {e}")
+            sys.exit(1)
+    
     # 首先尝试从参数获取值，如果没有提供则使用配置系统
     if host is not None:
         GlobalVar.set("host", host)
@@ -426,8 +453,7 @@ def mcp(transport: str, host: str, port: int, save_config: bool):
     
     # 如果需要保存配置
     if save_config:
-        # 获取 AIVK 根目录路径
-        root_path = fs.get_root_path()
+        # 获取 AIVK 根目录路径，使用 GlobalVar
         config_path = root_path / "etc" / "aivk" / "config.toml"
         
         # 确保目录存在
@@ -442,6 +468,7 @@ def mcp(transport: str, host: str, port: int, save_config: bool):
         logger.info(f"配置详情: host={host}, port={port}")
     
     print(f"Transport: {transport}, Host: {host}, Port: {port}")
+    print(f"AIVK 根目录: {root_path}")
     
     # 导入 mcp 模块 (server.py)
     from ..mcp.server import mcp

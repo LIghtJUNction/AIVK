@@ -10,9 +10,11 @@ from pathlib import Path
 import toml
 
 try:
+    from ..base.models import GlobalVar
     from ..__about__ import __version__, __github__
     from .utils import AivkExecuter
 except ImportError:
+    from aivk.base.models import GlobalVar
     from aivk.__about__ import __version__, __github__
     from aivk.base.utils import AivkExecuter
 
@@ -41,7 +43,8 @@ class AivkFS:
             FileExistsError: 如果目录已存在且 force=False
             Exception: 初始化过程中的其他错误
         """
-        path = path if path else Path.home() / ".aivk"
+        # 使用 GlobalVar 获取默认根目录
+        path = path if path else GlobalVar.get_aivk_root()
         logger.info(f"初始化 AIVK 根目录: {path} (force={force})")
         
         if path.exists() and not force:
@@ -92,6 +95,9 @@ class AivkFS:
             # 创建配置目录
             etc_aivk_dir = path / "etc" / "aivk"
             etc_aivk_dir.mkdir(exist_ok=True, parents=True)
+            
+            # 更新 GlobalVar 中的根目录设置
+            GlobalVar.set_aivk_root(path)
             
             # 新建 .aivk 根标记文件
             await cls._create_dotaivk_file(path)
@@ -279,7 +285,8 @@ exclude = [
             FileNotFoundError: 如果目录不存在
             Exception: 挂载过程中的其他错误
         """
-        path = path if path else Path.home() / ".aivk"
+        # 使用 GlobalVar 获取默认根目录
+        path = path if path else GlobalVar.get_aivk_root()
         logger.info(f"挂载 AIVK 根目录: {path}")
         
         if not path.exists():
@@ -304,17 +311,10 @@ exclude = [
             with open(dotaivk_file, "w") as f:
                 toml.dump(config, f)
             
-            # 挂载虚拟文件系统（此处为示例，实际实现可能需要根据具体需求扩展）
-            # TODO: 实现虚拟文件系统挂载
-            
-            # 加载插件
-            plugins_dir = path / "plugins"
-            if plugins_dir.exists():
-                plugin_count = len(list(plugins_dir.glob("*.py")))
-                logger.info(f"发现 {plugin_count} 个插件")
-                # TODO: 实现插件加载逻辑
-            
+            # 更新 GlobalVar 中的根目录设置
+            GlobalVar.set_aivk_root(path)
             logger.info(f"AIVK 成功挂载于 {path}")
+            
             return True
             
         except Exception as e:
@@ -332,7 +332,8 @@ exclude = [
         Returns:
             bool: 是否已初始化
         """
-        path = path if path else Path.home() / ".aivk"
+        # 使用 GlobalVar 获取默认根目录
+        path = path if path else GlobalVar.get_aivk_root()
         dotaivk_file = path / ".aivk"
         
         return path.exists() and dotaivk_file.exists()
@@ -343,22 +344,10 @@ exclude = [
         获取 AIVK 根目录路径
         
         Returns:
-            Path: AIVK 根目录路径，如果未找到则返回默认路径
+            Path: AIVK 根目录路径
         """
-        # 首先检查环境变量
-        env_path = os.environ.get("AIVK_ROOT")
-        if (env_path):
-            path = Path(env_path)
-            if cls.is_initialized(path):
-                return path
-        
-        # 其次检查默认路径
-        default_path = Path.home() / ".aivk"
-        if cls.is_initialized(default_path):
-            return default_path
-        
-        # 最后返回默认路径（即使未初始化）
-        return default_path
+        # 直接从 GlobalVar 获取根目录
+        return GlobalVar.get_aivk_root()
 
 # 简便的函数接口
 

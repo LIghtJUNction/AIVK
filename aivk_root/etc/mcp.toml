@@ -1,0 +1,9 @@
+[metadata]
+updated = "2025-04-13 23:13:00.316774"
+
+[config.mcpServers.aivk]
+name = "AIVK MCP"
+type = "stdio"
+command = "aivk"
+args = [ "mcp", "--stdio",]
+enabled = true

@@ -111,12 +111,54 @@ class GlobalVar:
         return cls.get("host", "localhost")
     
     @classmethod
+    def set_aivk_root(cls, path: Union[str, Path]) -> None:
+        """设置AIVK根目录"""
+        if isinstance(path, str):
+            path = Path(path)
+        cls.set("AIVK_ROOT", path)
+        
+        # 更新配置
+        cls._config.AIVK_ROOT = path
+        
+        # 确保目录存在
+        path.mkdir(parents=True, exist_ok=True)
+
+    @classmethod
     def get_aivk_root(cls) -> Path:
-        """获取AIVK根目录"""
-        root_path = cls.get("AIVK_ROOT", Path().home() / ".aivk")
-        if isinstance(root_path, str):
-            return Path(root_path)
-        return root_path
+        """
+        获取AIVK根目录，按照以下优先级：
+        1. 用户输入（存储在 GlobalVar._storage 中）
+        2. 环境变量 AIVK_ROOT
+        3. 默认路径 ~/.aivk
+        """
+        # 优先级1：检查用户输入（存储在 _storage 中）
+        if "AIVK_ROOT" in cls._storage:
+            root_path = cls._storage["AIVK_ROOT"]
+            if isinstance(root_path, str):
+                return Path(root_path)
+            return root_path
+            
+        # 优先级2：检查环境变量 AIVK_ROOT
+        env_root = os.environ.get("AIVK_ROOT")
+        if env_root:
+            return Path(env_root)
+            
+        # 优先级3：使用默认路径 ~/.aivk
+        default_path = Path.home() / ".aivk"
+        return default_path
     
     # 数据存储区
     data: Dict[str, Any] = {}
+
+if __name__ == "__main__":
+    # 测试配置加载和保存
+    config = Config.load_from_file()
+    print(config.model_dump_json(indent=4))
+    
+    # 修改配置并保存
+    config.port = 10141
+    config.save_to_file()
+    
+    # 再次加载以验证保存
+    config = Config.load_from_file()
+    print(config.model_dump_json(indent=4))
