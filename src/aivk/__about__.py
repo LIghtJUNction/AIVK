@@ -2,7 +2,7 @@
 # aivk - module
 __id__ : str = "aivk"
 __name__ : str = "AIVK"
-__version__ : str = "0.1.0"
+__version__ : str = "0.3.1.5"
 
 __author__ : str = "LIghtJUNction"
 __license__ : str = "MIT"
@@ -12,7 +12,6 @@ __description__ : str = "AIVK - AI Virtual Kernel"
 __copyright__ : str = "Copyright (c) 2025 LIghtJUNction"
 __email__ : str = "lightjunction.me@gmail.com"
 __github__ : str = "https://github.com/LIghtJUNction/AIVK"
-
 
 # ASCII艺术字和其他常量定义
 __LOGO__ = """
@@ -50,7 +49,7 @@ Welcome to AIVK !
   ░░░█████░█████░    ░███ ░   █ ░███      █░░███     ███░░███     ███  ░███      ░███  ░███ ░   █
     ░░███ ░░███      ██████████ ███████████ ░░█████████  ░░░███████░   █████     █████ ██████████
      ░░░   ░░░      ░░░░░░░░░░ ░░░░░░░░░░░   ░░░░░░░░░     ░░░░░░░    ░░░░░     ░░░░░ ░░░░░░░░░░ 
-{__description__}           First run AIVK , please refer to the documentation for more details.
+{__description__}      
 Author: @{__author__}    
 Mail : {__email__}  
 Version: {__version__}     
@@ -59,7 +58,6 @@ Copyright: {__copyright__}
                          
 github: {__github__}            | Thank for using AIVK !    Open source project.                                                                                                                              
 """.format(__version__=__version__, __author__=__author__, __description__=__description__, __license__=__license__, __copyright__=__copyright__, __github__=__github__, __email__=__email__)
-
 
 
 __SUCCESS__ = """
