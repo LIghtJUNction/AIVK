@@ -1,16 +1,16 @@
 from datetime import datetime
 import os
-import importlib
-import sys
 from pathlib import Path
-from pydantic import BaseModel
+import shutil
 import toml
 from .fs import AivkFS
+from ..__about__ import __version__, __github__ , __root__
+from ..base.utils import AivkExecuter
 
-
-class AivkIO(BaseModel):
+class AivkIO:
     """AIVK IO类"""
-    AIVK_ROOT : Path = Path(os.getenv("AIVK_ROOT", str(Path().home() / ".aivk")))
+    # 定义为普通类变量，不作为模型字段
+    AIVK_ROOT: Path = Path(os.getenv("AIVK_ROOT", str(Path().home() / ".aivk")))
     __registered_ids = set()  # 用于跟踪已注册的ID
 
     @classmethod
@@ -43,10 +43,135 @@ class AivkIO(BaseModel):
     async def fs_init(cls, force: bool = False) -> Path:
         """初始化AIVK_ROOT目录
         
-        :param force: 是否强制初始化
+        :param force: 是否强制初始化，如果为True则覆盖现有目录
         :return: 初始化后的 AIVK 根目录路径
         """
-        return await AivkFS.initialize(force=force)
+        import logging
+        logger = logging.getLogger("aivk.io")
+        
+        # 确保AivkFS.AIVK_ROOT与AivkIO.AIVK_ROOT同步
+        AivkFS.AIVK_ROOT = cls.AIVK_ROOT
+        logger.debug(f"尝试初始化AIVK根目录: {cls.AIVK_ROOT}, force={force}")
+
+        # 检查目录是否已经初始化
+        dotaivk = cls.AIVK_ROOT / ".aivk"
+        if dotaivk.exists() and not force:
+            logger.warning(f"AIVK 根目录已初始化，跳过初始化步骤: {cls.AIVK_ROOT}")
+            return cls.AIVK_ROOT
+
+        # 执行初始化
+        if cls.AIVK_ROOT.exists() and force:
+            # 检查是否为空
+            if any(cls.AIVK_ROOT.iterdir()):
+                shutil.rmtree(cls.AIVK_ROOT)
+                logger.warning(f"强制初始化 AIVK 根目录: {cls.AIVK_ROOT} \n 清空")
+            else:
+                logger.info(f"当前 AIVK 根目录为空: {cls.AIVK_ROOT}")
+
+        root_path = cls.AIVK_ROOT
+        logger.debug(f"创建AIVK根目录: {root_path}")
+        try:
+            root_path.mkdir(parents=True, exist_ok=True)
+            logger.debug(f"AIVK根目录创建成功: {root_path}")
+        except Exception as e:
+            logger.error(f"创建AIVK根目录失败: {e}")
+            raise RuntimeError(f"创建AIVK根目录失败: {e}")
+        
+        # 创建基本目录结构
+        logger.debug("开始创建基本目录结构...")
+        basic_dirs = ["etc", "etc/aivk", "cache", "data", "tmp", "home"]
+        for dir_name in basic_dirs:
+            dir_path = root_path / dir_name
+            try:
+                dir_path.mkdir(parents=True, exist_ok=True)
+                logger.debug(f"目录创建成功: {dir_path}")
+            except Exception as e:
+                logger.error(f"创建目录 {dir_name} 失败: {e}")
+                raise RuntimeError(f"创建基本目录结构失败: {e}")
+        
+        # 创建基本的 .aivk 文件，确保结构与预期一致
+        logger.debug(f"创建 .aivk 标记文件: {dotaivk}")
+        try:
+            import toml
+            import datetime
+            import platform
+            
+            current_time = datetime.datetime.now().isoformat()
+            aivk_info = {
+                "metadata": {
+                    "aivk": "https://github.com/LIghtJUNction/AIVK",
+                    "version": __version__,  
+                    "created": current_time,
+                    "updated": current_time,
+                    "path": str(root_path)
+                },
+                "system": {
+                    "os": platform.system(),
+                    "release": platform.release(),
+                    "version": platform.version(),
+                    "machine": platform.machine(),
+                    "processor": platform.processor(),
+                    "python": platform.python_version()
+                },
+                # 添加模块部分，用于记录已注册模块
+                "modules": {}
+            }
+            
+            # 以文本模式写入确保换行符处理正确
+            with open(dotaivk, 'w', encoding='utf-8') as f:
+                toml.dump(aivk_info, f)
+            logger.info(f".aivk 标记文件创建成功: {dotaivk}")
+        except Exception as e:
+            logger.error(f"创建 .aivk 标记文件失败: {e}")
+            raise RuntimeError(f"创建 .aivk 标记文件失败: {e}")
+            
+        # 创建基本配置文件
+        config_path = root_path / "etc" / "aivk" / "config.toml"
+        logger.debug(f"创建配置文件: {config_path}")
+        try:
+            import toml
+            config = {
+                "port": 10140,
+                "host": "localhost",
+                "created_at": current_time,
+                "updated_at": current_time
+            }
+            with open(config_path, 'w', encoding='utf-8') as f:
+                toml.dump(config, f)
+            logger.info(f"配置文件创建成功: {config_path}")
+        except Exception as e:
+            logger.error(f"创建配置文件失败: {e}")
+            raise RuntimeError(f"创建配置文件失败: {e}")
+            
+        # 创建基本元数据文件    
+        meta_path = root_path / "etc" / "aivk" / "meta.toml"
+        logger.debug(f"创建元数据文件: {meta_path}")
+        try:
+            import toml
+            meta = {
+                "version": __version__,
+                "github": __github__,
+                "AIVK_ROOT": str(root_path),
+                "created_at": current_time,
+                "updated_at": current_time,
+                "init_force": force
+            }
+            with open(meta_path, 'w', encoding='utf-8') as f:
+                toml.dump(meta, f)
+            logger.info(f"元数据文件创建成功: {meta_path}")
+        except Exception as e:
+            logger.error(f"创建元数据文件失败: {e}")
+            raise RuntimeError(f"创建元数据文件失败: {e}")
+        
+        pyproject_path = root_path / "pyproject.toml"
+
+        toml.dump(__root__, open(pyproject_path, 'w', encoding='utf-8'))
+        logger.info(f"pyproject.toml 文件创建成功: {pyproject_path}")
+        await AivkExecuter.aexec(command="uv sync", shell=True, cwd=root_path)
+
+        logger.info(f"AIVK 根目录初始化完成: {root_path}")
+        return root_path
+    
 
     @classmethod
     async def fs_mount(cls) -> Path:
@@ -54,71 +179,95 @@ class AivkIO(BaseModel):
         
         :return: 挂载后的 AIVK 根目录路径
         """
-        path = await AivkFS.mount()
-        
-        # 启动时读取已保存的模块ID
-        module_ids = cls.get_module_ids()
-        if module_ids:
-            import logging
-            logger = logging.getLogger("aivk.io")
-            logger.info(f"已加载 {len(module_ids)} 个模块ID")
-        
-        # 将读取到的ID添加到已注册集合中，防止重复注册
-        for module_id in module_ids:
-            cls.__registered_ids.add(module_id)
-            
-        return path
-    
-    @classmethod
-    def _check_and_register_caller(cls):
-        """检查调用方并尝试注册其ID"""
-        # 如果AIVK根目录未初始化，跳过注册过程
-        if not cls.is_aivk_root():
-            return
-            
-        import inspect
         import logging
         logger = logging.getLogger("aivk.io")
         
-        # 获取调用栈
-        stack = inspect.stack()
+        # 确保AivkFS.AIVK_ROOT与AivkIO.AIVK_ROOT同步
+        AivkFS.AIVK_ROOT = cls.AIVK_ROOT
+        logger.debug(f"开始挂载AIVK根目录: {cls.AIVK_ROOT}")
         
-        # 跳过本方法和直接调用方法，从实际业务调用处开始查找
-        for frame in stack[2:]:
-            module = inspect.getmodule(frame[0])
-            if module:
-                module_name = module.__name__
-                
-                # 检查是否是 AIVK 模块（以 aivk_ 开头或等于 aivk 或aivk的子模块）
-                parts = module_name.split('.')
-                top_module = parts[0]
-                
-                if top_module == "aivk" or top_module.startswith("aivk_"):
-                    # 已注册的模块跳过
-                    if top_module in cls.__registered_ids:
-                        return
-                    
-                    # 获取模块信息
-                    try:
-                        mod = sys.modules.get(top_module)
-                        if mod:
-                            module_info = {}
-                            if hasattr(mod, "__id__"):
-                                module_info["id"] = getattr(mod, "__id__")
-                            if hasattr(mod, "__version__"):
-                                module_info["version"] = getattr(mod, "__version__")
-                            if hasattr(mod, "__github__"):
-                                module_info["github"] = getattr(mod, "__github__")
-                                
-                            # 添加到模块ID列表
-                            if cls.add_module_id(top_module, **module_info):
-                                cls.__registered_ids.add(top_module)
-                                logger.debug(f"自动注册模块ID: {top_module}")
-                    except Exception as e:
-                        logger.debug(f"尝试注册模块ID时出错 [{top_module}]: {e}")
-                    
-                    # 只处理找到的第一个AIVK模块
-                    break
+        # 检查根目录是否存在
+        if not cls.AIVK_ROOT.exists():
+            logger.error(f"AIVK 根目录不存在: {cls.AIVK_ROOT}")
+            raise FileNotFoundError(f"AIVK 根目录不存在: {cls.AIVK_ROOT}，请先初始化")
+        
+        # 检查.aivk文件是否存在
+        dotaivk = cls.AIVK_ROOT / ".aivk"
+        if not dotaivk.exists():
+            logger.error(f"AIVK 根目录未初始化，.aivk 标记文件不存在: {dotaivk}")
+            raise FileNotFoundError(f"AIVK 根目录未初始化，请先运行 'aivk init'")
+        
+        try:
+            # 读取.aivk文件，验证格式
+            import toml
+            logger.debug(f"读取 .aivk 标记文件: {dotaivk}")
+            dotaivk_content = toml.load(dotaivk)
+            
+            # 检查是否包含必要的字段
+            if "metadata" not in dotaivk_content:
+                logger.warning(f".aivk 文件格式不正确，缺少 metadata 部分")
+                # 尝试修复
+                dotaivk_content["metadata"] = {
+                    "aivk": "https://github.com/LIghtJUNction/AIVK",
+                    "version": __version__,
+                    "created": datetime.now().isoformat(),
+                    "updated": datetime.now().isoformat(),
+                    "path": str(cls.AIVK_ROOT)
+                }
+                logger.info(f"已自动添加缺失的 metadata 部分")
+            
+            # 更新访问时间
+            dotaivk_content["metadata"]["accessed"] = datetime.now().isoformat()
+            dotaivk_content["updated_at"] = datetime.now().isoformat()
+            
+            # 将修改保存回文件
+            with open(dotaivk, 'w', encoding='utf-8') as f:
+                toml.dump(dotaivk_content, f)
+            logger.debug(f"已更新 .aivk 文件的访问时间")
+            
+            # 检查基本目录结构是否完整
+            basic_dirs = ["etc", "etc/aivk", "cache", "data", "tmp", "home"]
+            missing_dirs = []
+            for dir_name in basic_dirs:
+                dir_path = cls.AIVK_ROOT / dir_name
+                if not dir_path.exists():
+                    missing_dirs.append(dir_name)
+                    logger.warning(f"缺少目录: {dir_path}")
+                    dir_path.mkdir(parents=True, exist_ok=True)
+                    logger.info(f"已创建缺失目录: {dir_path}")
+            
+            if missing_dirs:
+                logger.warning(f"挂载过程中发现并修复了缺失的目录: {', '.join(missing_dirs)}")
+            
+            # 调用底层mount方法
+            logger.debug(f"调用 AivkFS.mount()")
+            path = await AivkFS.mount()
+            logger.info(f"成功挂载AIVK根目录: {path}")
+            
+            # 启动时读取已保存的模块ID
+            module_ids = cls.get_module_ids()
+            logger.debug(f"读取模块ID列表: 找到 {len(module_ids)} 个")
+            
+            # 将读取到的ID添加到已注册集合中，防止重复注册
+            for module_id in module_ids:
+                cls.__registered_ids.add(module_id)
+                logger.debug(f"已注册模块ID: {module_id}")
+            
+            if module_ids:
+                logger.info(f"已加载 {len(module_ids)} 个模块ID")
+            
+            return path
+            
+        except FileNotFoundError as e:
+            logger.error(f"挂载失败: 文件不存在: {e}")
+            raise FileNotFoundError(f"挂载失败: {e}")
+        except toml.TomlDecodeError as e:
+            logger.error(f"挂载失败: .aivk 文件格式错误: {e}")
+            raise ValueError(f"AIVK根目录损坏，.aivk 文件格式错误: {e}")
+        except Exception as e:
+            logger.error(f"挂载AIVK根目录失败: {e}")
+            raise RuntimeError(f"挂载AIVK根目录失败: {e}")
+    
 
     @classmethod
     def get_config(cls, id : str) -> dict:
@@ -127,8 +276,6 @@ class AivkIO(BaseModel):
         :param id: 配置ID
         :return: 配置字典，如果加载失败则返回空字典
         """
-        # 检查并注册调用方
-        cls._check_and_register_caller()
         
         config_path = AivkFS.config_file(id, exist=True)
         
@@ -181,8 +328,6 @@ class AivkIO(BaseModel):
         :param id: 元数据ID
         :return: 元数据字典，如果加载失败则返回空字典
         """
-        # 检查并注册调用方
-        cls._check_and_register_caller()
         
         meta_path = AivkFS.meta_file(id, exist=True)
         
@@ -205,9 +350,6 @@ class AivkIO(BaseModel):
         :param meta: 元数据字典
         :return: 是否保存成功
         """
-        # 检查并注册调用方
-        cls._check_and_register_caller()
-        
         try:
             meta_path = AivkFS.meta_file(id, exist=True)
             # 确保目录存在

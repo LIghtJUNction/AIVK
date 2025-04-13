@@ -2,7 +2,7 @@
 # aivk - module
 __id__ : str = "aivk"
 __name__ : str = "AIVK"
-__version__ : str = "0.3.2.1"
+__version__ : str = "0.3.2.3"
 
 __author__ : str = "LIghtJUNction"
 __license__ : str = "MIT"
@@ -12,6 +12,27 @@ __description__ : str = "AIVK - AI Virtual Kernel"
 __copyright__ : str = "Copyright (c) 2025 LIghtJUNction"
 __email__ : str = "lightjunction.me@gmail.com"
 __github__ : str = "https://github.com/LIghtJUNction/AIVK"
+
+# PyProject.toml 配置
+__root__ : dict = {
+    "project": {
+        "name": "aivk_root",
+        "version": __version__,
+        "description": "aivk root directory",
+        "authors": [
+            {"name": __author__, "email": __email__}
+        ],
+        "requires-python": ">=3.13",
+        "dependencies": [
+        ]
+    },
+    "build-system": {
+        "requires": ["hatchling"],
+        "build-backend": "hatchling.build"
+    },
+}
+
+    
 
 # ASCII艺术字和其他常量定义
 __LOGO__ = """

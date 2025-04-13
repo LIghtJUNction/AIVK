@@ -39,92 +39,59 @@ def cli(debug):
 
 @cli.command(name="init")
 @click.option("--force", "-f", is_flag=True, help="Force overwrite the existing aivk root directory")
-@click.option("--path", "-p", type=click.Path(writable=True, resolve_path=True), envvar="AIVK_ROOT", help="Path to the aivk root directory")
+@click.option("--path", "-p", help="Path to the aivk root directory")
 def init(path, force):
     """Initialize the AIVK root directory"""
-    try:
-        # 增加更多调试日志
-        logger.debug(f"开始初始化 AIVK 根目录，参数: path={path}, force={force}")
-        
-        path_obj = Path(path) if path else None
-        # 如果指定了路径，先设置到 AivkIO 中
-        if path_obj and path_obj != AivkIO.get_aivk_root():
-            original_path = AivkIO.get_aivk_root()
-            logger.debug(f"设置 AIVK 根目录: {original_path} -> {path_obj.absolute()}")
-            AivkIO.set_aivk_root(path_obj.absolute())
-            logger.info(f" {original_path} —> {path_obj.absolute()}")
-        
-        # 显示当前设置的根目录
-        logger.debug(f"当前 AIVK_ROOT = {AivkIO.get_aivk_root()}")
-        
-        # 使用 asyncio.run 来运行异步函数
-        logger.debug(f"正在调用 AivkIO.fs_init(force={force})")
-        try:
-            AIVK_ROOT = asyncio.run(AivkIO.fs_init(force=force))
-            logger.info(f"Successfully initialized AIVK at {AIVK_ROOT} !")
-        except Exception as e:
-            logger.error(f"初始化失败: {e}")
-            # 记录更多调试信息
-            import traceback
-            logger.debug(f"详细错误信息: {traceback.format_exc()}")
-            raise
 
-    except FileExistsError as e:
-        logger.error(str(e))
-        sys.exit(1)
-    except Exception as e:
-        logger.error(f"Failed to initialize AIVK: {str(e)}")
-        sys.exit(1)
+        # 增加更多调试日志
+    logger.debug(f"开始初始化 AIVK 根目录，参数: path={path}, force={force}")
+    
+    path_obj = Path(path) if path else None
+    # 如果指定了路径，先设置到 AivkIO 中
+    if path_obj and path_obj != AivkIO.get_aivk_root():
+        original_path = AivkIO.get_aivk_root()
+        logger.debug(f"设置 AIVK 根目录: {original_path} -> {path_obj.absolute()}")
+        AivkIO.set_aivk_root(path_obj.absolute())
+        logger.info(f" {original_path} —> {path_obj.absolute()}")
+    
+    # 显示当前设置的根目录
+    logger.debug(f"当前 AIVK_ROOT = {AivkIO.get_aivk_root()}")
+    
+    # 使用 asyncio.run 来运行异步函数
+    logger.debug(f"正在调用 AivkIO.fs_init(force={force})")
+    AIVK_ROOT = asyncio.run(AivkIO.fs_init(force=force))
+
 
 
 @cli.command(name="mount")
-@click.option("--path", "-p", type=click.Path(resolve_path=True), envvar="AIVK_ROOT", help="Path to the aivk root directory")
+@click.option("--path", "-p", help="Path to the aivk root directory")
 @click.option("--interactive", "-i", is_flag=True, help="Enter interactive shell after mounting (default: True)")
-@click.option("--no-interactive", "-n", is_flag=True, help="Do not enter interactive shell after mounting")
-def mount(path, interactive, no_interactive):
+def mount(path, interactive):
     """Mount the AIVK root directory"""
-    try:
-        # 增加更多调试日志
-        logger.debug(f"开始挂载 AIVK 根目录，参数: path={path}")
-        
-        path_obj = Path(path) if path else None
-        # 如果指定了路径
-        if path_obj and path_obj.absolute() != AivkIO.get_aivk_root():
-            original_path = AivkIO.get_aivk_root()
-            logger.debug(f"设置 AIVK 根目录: {original_path} -> {path_obj.absolute()}")
-            AivkIO.set_aivk_root(path_obj.absolute())
-            logger.info(f" {original_path} —> {path_obj.absolute()}")
-        
-        # 显示当前设置的根目录
-        logger.debug(f"当前 AIVK_ROOT = {AivkIO.get_aivk_root()}")
-        
-        # 使用 asyncio.run 运行异步函数
-        logger.debug(f"正在调用 AivkIO.fs_mount()")
-        try:
-            AIVK_ROOT = asyncio.run(AivkIO.fs_mount())
-            logger.info(f"Successfully mounted AIVK at {AIVK_ROOT}")
-            
-            # 如果明确指定了 no_interactive，则不进入交互界面
-            if no_interactive:
-                interactive = False
-            if interactive:
-                # 进入交互式界面
-                interactive_shell()
-        except Exception as e:
-            logger.error(f"挂载失败: {e}")
-            # 记录更多调试信息
-            import traceback
-            logger.debug(f"详细错误信息: {traceback.format_exc()}")
-            raise
-    except FileNotFoundError as e:
-        logger.error(str(e))
-        sys.exit(1)
-    except Exception as e:
-        logger.error(f"Failed to mount AIVK: {e}")
-        sys.exit(1)
 
+    # 增加更多调试日志
+    logger.debug(f"开始挂载 AIVK 根目录，参数: path={path}")
+    
+    path_obj = Path(path) if path else None
+    # 如果指定了路径
+    if path_obj and path_obj.absolute() != AivkIO.get_aivk_root():
+        original_path = AivkIO.get_aivk_root()
+        logger.debug(f"设置 AIVK 根目录: {original_path} -> {path_obj.absolute()}")
+        AivkIO.set_aivk_root(path_obj.absolute())
+        logger.info(f" {original_path} —> {path_obj.absolute()}")
+    
+    # 显示当前设置的根目录
+    logger.debug(f"当前 AIVK_ROOT = {AivkIO.get_aivk_root()}")
+    
+    # 使用 asyncio.run 运行异步函数
+    logger.debug(f"正在调用 AivkIO.fs_mount()")
 
-
+    AIVK_ROOT = asyncio.run(AivkIO.fs_mount())
+    logger.info(f"You can use aivk mount -i / aivk shell to enter interactive shell")
+    
+    if interactive:
+        # 进入交互式界面
+        interactive_shell()
 
 @cli.command(name="shell")
 @click.option("--path", "-p", type=click.Path(), envvar="AIVK_ROOT", help="Path to the aivk root directory")
