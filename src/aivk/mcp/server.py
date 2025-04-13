@@ -2,168 +2,258 @@ import asyncio
 from pathlib import Path
 from mcp.server.fastmcp import FastMCP
 from datetime import datetime
+import logging
 
 try:
-    from ..base.fs import AivkFS
-    from ..base.models import GlobalVar
+    from ..base.aivkio import AivkIO
 except ImportError:
-    from aivk.base.fs import AivkFS
-    from aivk.base.models import GlobalVar
+    from aivk.base.aivkio import AivkIO
 
-port = GlobalVar.get_port()
-host = GlobalVar.get_host()
+# 设置 logger
+logger = logging.getLogger("aivk.mcp")
+
+# 获取配置
+aivk_config = AivkIO.get_config("aivk")
+port = aivk_config.get("port", 10140)
+host = aivk_config.get("host", "localhost")
 
 # 创建 FastMCP 实例
 mcp = FastMCP(
     name="aivk", 
-    instructions="aivk mcp server", 
+    instructions="AIVK MCP 服务器提供文件系统操作接口", 
     port=port,
     host=host
 )
+aivk_config["port"] = port
+aivk_config["host"] = host
+AivkIO.save_config("aivk", aivk_config)
+
 
 @mcp.resource("aivk://status", mime_type = "text/plain")
 def status():
     """返回 AIVK 状态信息
     查看现在是否已经初始化aivk root dir
     """
-    root: Path = GlobalVar.get_aivk_root()
-    if AivkFS.is_initialized(root):
-        return {
-            "status": "AIVK is initialized",
-            "aivk_root": str(root),
+    root: Path = AivkIO.get_aivk_root()
+    if AivkIO.is_aivk_root():
+        # 获取更多状态信息
+        try:
+            meta = AivkIO.get_meta("aivk")
+            module_ids = AivkIO.get_module_ids()
+            
+            return {
+                "status": "initialized",
+                "aivk_root": str(root),
+                "version": meta.get("version", "unknown"),
+                "created_at": meta.get("created_at", ""),
+                "updated_at": meta.get("updated_at", ""),
+                "modules_count": len(module_ids) if module_ids else 0,
+                "modules": list(module_ids.keys()) if module_ids else []
+            }
+        except Exception as e:
+            logger.error(f"获取状态信息失败: {e}")
+            return {
+                "status": "initialized",
+                "aivk_root": str(root),
+                "error": str(e)
             }
     else:
         return {
-            "status": f"AIVK is not initialized ! :{str(root)}",  
+            "status": "not_initialized",
+            "aivk_root": str(root),
+            "message": "AIVK 未初始化，请先执行 init_aivk_root_dir 初始化"
         }
     
     
 @mcp.tool(name="init_aivk_root_dir", description="initialize aivk root dir")
-def init_aivk_root_dir(path: str ):
+def init_aivk_root_dir(path: str = None):
     """初始化 AIVK 根目录
-    path: str, AIVK 根目录路径
+    
+    :param path: AIVK 根目录路径，默认为当前配置的路径
+    :return: 初始化结果
     """
-    # 为了安全起见， 不允许AI使用强制模式，以免删除重要文件
-    root = Path(path)
-        
-    # 记录初始化步骤
-    steps = []
-    steps.append(f"1. 设置 AIVK 根目录: {path}")
-    
-    # 设置全局变量
-    GlobalVar.set_aivk_root(root)
-    steps.append(f"2. 已更新全局变量 AIVK_ROOT: {path}")
-    
     try:
-        # 执行初始化过程
-        asyncio.run(AivkFS.initialize(root, force=False))
-        steps.append("3. 创建了以下基本目录结构:")
-        steps.append(f"   - {path}/cache (缓存目录)")
-        steps.append(f"   - {path}/tmp (临时目录)")
-        steps.append(f"   - {path}/data (数据目录)")
-        steps.append(f"   - {path}/etc (配置目录)")
-        steps.append(f"   - {path}/home (主目录)")
-        steps.append(f"   - {path}/etc/aivk (AIVK配置目录)")
-        steps.append(f"4. 创建了以下配置文件:")
-        steps.append(f"   - {path}/.aivk (根标记文件，包含版本、创建时间等元数据)")
-        steps.append(f"   - {path}/etc/mcp.toml (MCP服务器配置)")
-        steps.append(f"   - {path}/etc/aivk/meta.toml (AIVK元数据配置)")
-        steps.append(f"5. 初始化了uv项目环境")
-        steps.append(f"   - 创建了pyproject.toml和README.md")
-        steps.append(f"   - 执行了uv sync命令同步环境")
+        if path:
+            path_obj = Path(path).absolute()
+            logger.info(f"设置 AIVK 根目录: {AivkIO.get_aivk_root()} -> {path_obj}")
+            AivkIO.set_aivk_root(path_obj)
         
+        # 使用 force=False 保证安全性，防止误删除
+        AIVK_ROOT = asyncio.run(AivkIO.fs_init(force=False))
+        
+        return {
+            "success": True,
+            "path": str(AIVK_ROOT),
+            "message": f"AIVK 根目录初始化成功: {AIVK_ROOT}"
+        }
     except Exception as e:
-        return f"初始化失败: {str(e)}\n已执行的步骤:\n" + "\n".join(steps)
-
-    # 返回详细的初始化信息
-    return f"AIVK根目录初始化成功！\n\n初始化过程详情:\n" + "\n".join(steps)
+        logger.error(f"初始化 AIVK 根目录失败: {e}")
+        return {
+            "success": False,
+            "error": str(e),
+            "message": f"初始化失败: {e}"
+        }
 
 @mcp.tool(name="mount_aivk_root_dir", description="mount aivk root dir")
 def mount_aivk_root_dir(path: str = None):
     """挂载 AIVK 根目录
-    path: str, AIVK 根目录路径
+    
+    :param path: AIVK 根目录路径，默认为当前配置的路径
+    :return: 挂载结果
     """
-    # 记录挂载步骤
-    steps = []
-    
     try:
-        # 使用提供的路径或默认路径
         if path:
-            root_path = Path(path)
-            steps.append(f"1. 使用指定路径: {path}")
-        else:
-            root_path = Path.home() / ".aivk"
-            steps.append(f"1. 使用默认路径: {root_path}")
+            path_obj = Path(path).absolute()
+            logger.info(f"设置 AIVK 根目录: {AivkIO.get_aivk_root()} -> {path_obj}")
+            AivkIO.set_aivk_root(path_obj)
         
-        # 检查路径是否存在
-        if not root_path.exists():
-            steps.append(f"错误: 路径 {root_path} 不存在，无法挂载")
-            return "\n".join(steps)
+        AIVK_ROOT = asyncio.run(AivkIO.fs_mount())
         
-        steps.append(f"2. 验证路径存在: {root_path}")
+        # 获取已加载的模块ID
+        module_ids = AivkIO.get_module_ids()
         
-        # 检查.aivk标记文件
-        dotaivk_file = root_path / ".aivk"
-        if not dotaivk_file.exists():
-            steps.append(f"错误: {root_path} 不是有效的AIVK根目录，缺少.aivk标记文件")
-            return "\n".join(steps)
-        
-        steps.append(f"3. 验证.aivk标记文件存在")
-        
-        # 执行挂载
-        asyncio.run(AivkFS.mount(path))
-        
-        # 读取配置文件，显示更多信息
-        try:
-            import toml
-            with open(dotaivk_file, "r") as f:
-                config = toml.load(f)
-            
-            meta = config.get("metadata", {})
-            steps.append(f"4. 读取.aivk配置文件:")
-            steps.append(f"   - 创建时间: {meta.get('created', '未知')}")
-            steps.append(f"   - 更新时间: {meta.get('updated', '未知')}")
-            steps.append(f"   - AIVK版本: {meta.get('version', '未知')}")
-        except Exception as e:
-            steps.append(f"4. 无法读取配置文件: {str(e)}")
-        
-        # 更新全局变量
-        GlobalVar.set_aivk_root(root_path)
-        steps.append(f"5. 更新全局变量AIVK_ROOT: {root_path}")
-        
-        # 检查目录结构
-        steps.append(f"6. 验证目录结构:")
-        for subdir in ["cache", "tmp", "data", "etc", "home"]:
-            if (root_path / subdir).exists():
-                steps.append(f"   - {subdir}/ ✓")
-            else:
-                steps.append(f"   - {subdir}/ ✗")
-        
-        # 显示挂载时间
-        steps.append(f"7. 挂载完成时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    
+        return {
+            "success": True,
+            "path": str(AIVK_ROOT),
+            "message": f"AIVK 根目录挂载成功: {AIVK_ROOT}",
+            "modules_count": len(module_ids) if module_ids else 0,
+            "modules": list(module_ids.keys()) if module_ids else []
+        }
+    except FileNotFoundError as e:
+        logger.error(f"挂载 AIVK 根目录失败: {e}")
+        return {
+            "success": False,
+            "error": str(e),
+            "message": "AIVK 根目录不存在或未初始化，请先执行 init_aivk_root_dir 初始化"
+        }
     except Exception as e:
-        return f"挂载失败: {str(e)}\n已执行的步骤:\n" + "\n".join(steps)
-    
-    # 返回详细的挂载信息
-    return f"AIVK根目录挂载成功！\n\n挂载过程详情:\n" + "\n".join(steps)
+        logger.error(f"挂载 AIVK 根目录失败: {e}")
+        return {
+            "success": False,
+            "error": str(e),
+            "message": f"挂载失败: {e}"
+        }
 
 
 @mcp.resource("aivk://root", mime_type="text/plain")
 def root():
-    """返回 AIVK 根目录"""
+    """返回 AIVK 根目录路径"""
     return {
-        "aivk_root": str(GlobalVar.get_aivk_root())
+        "aivk_root": str(AivkIO.get_aivk_root()),
+        "is_initialized": AivkIO.is_aivk_root()
     }
 
 @mcp.tool(name="ping", description="send ping response")
 def ping():
     """返回 AIVK ping 响应信息"""
-    return "pong!"
+    return {
+        "message": "pong!",
+        "timestamp": datetime.now().isoformat()
+    }
 
 @mcp.tool(name="set_aivk_root_dir", description="set aivk root dir")
 def set_aivk_root_dir(path: str):
-    """设置 AIVK 根目录"""
-    GlobalVar.set_aivk_root(path)
-    return f"AIVK root dir set to {path}"
+    """设置 AIVK 根目录
+    
+    :param path: 新的 AIVK 根目录路径
+    :return: 设置结果
+    """
+    try:
+        path_obj = Path(path).absolute()
+        original_path = AivkIO.get_aivk_root()
+        
+        # 检查路径是否存在
+        if not path_obj.exists():
+            return {
+                "success": False,
+                "error": "指定路径不存在",
+                "message": f"路径不存在: {path_obj}"
+            }
+        
+        AivkIO.set_aivk_root(path_obj)
+        
+        return {
+            "success": True,
+            "original_path": str(original_path),
+            "new_path": str(path_obj),
+            "message": f"AIVK 根目录已设置: {original_path} -> {path_obj}"
+        }
+    except Exception as e:
+        logger.error(f"设置 AIVK 根目录失败: {e}")
+        return {
+            "success": False,
+            "error": str(e),
+            "message": f"设置失败: {e}"
+        }
 
+@mcp.tool(name="get_config", description="get configuration by id")
+def get_config(id: str):
+    """获取指定ID的配置
+    
+    :param id: 配置ID
+    :return: 配置内容
+    """
+    try:
+        config = AivkIO.get_config(id)
+        return {
+            "success": True,
+            "id": id,
+            "config": config
+        }
+    except Exception as e:
+        logger.error(f"获取配置失败: {e}")
+        return {
+            "success": False,
+            "id": id,
+            "error": str(e),
+            "message": f"获取配置失败: {e}"
+        }
+
+
+
+@mcp.tool(name="get_meta", description="get metadata by id")
+def get_meta(id: str):
+    """获取指定ID的元数据
+    
+    :param id: 元数据ID
+    :return: 元数据内容
+    """
+    try:
+        meta = AivkIO.get_meta(id)
+        return {
+            "success": True,
+            "id": id,
+            "meta": meta
+        }
+    except Exception as e:
+        logger.error(f"获取元数据失败: {e}")
+        return {
+            "success": False,
+            "id": id,
+            "error": str(e),
+            "message": f"获取元数据失败: {e}"
+        }
+
+
+
+@mcp.tool(name="get_module_ids", description="get all registered module IDs")
+def get_module_ids():
+    """获取所有已注册的模块ID
+    
+    :return: 模块ID列表
+    """
+    try:
+        module_ids = AivkIO.get_module_ids()
+        return {
+            "success": True,
+            "count": len(module_ids) if module_ids else 0,
+            "module_ids": list(module_ids.keys()) if module_ids else [],
+            "modules_info": module_ids
+        }
+    except Exception as e:
+        logger.error(f"获取模块ID失败: {e}")
+        return {
+            "success": False,
+            "error": str(e),
+            "message": f"获取模块ID失败: {e}"
+        }

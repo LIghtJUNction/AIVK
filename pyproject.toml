@@ -1,7 +1,7 @@
 [project]
 name = "aivk"
-version = "0.3.1.9"
-description = "Add your description here"
+version = "0.3.2.1"
+description = "Aivk is ai Virtual Kernel"
 readme = "README.md"
 authors = [
     { name = "LIghtJUNction", email = "lightjunction.me@gmail.com" }
@@ -17,7 +17,6 @@ dependencies = [
     "toml>=0.10.2",
 ]
 
-# 修正入口点，移除src前缀
 [project.scripts]
 aivk = "aivk.cli.__main__:cli"
 
@@ -25,9 +24,9 @@ aivk = "aivk.cli.__main__:cli"
 requires = ["hatchling", "uv-dynamic-versioning"]
 build-backend = "hatchling.build"
 
-# 保持src布局配置
 [tool.hatch.build]
 packages = ["src"]
+directory = "dist"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/aivk"]

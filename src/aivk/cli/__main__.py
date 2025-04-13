@@ -7,13 +7,11 @@ import os
 from typing import Optional
 
 try:
-    from ..base.models import GlobalVar
     from ..__about__ import __version__, __github__ , __WELCOME__, __BYE__
-    from ..base import fs
+    from ..base.aivkio import AivkIO
 except ImportError:
     from aivk.__about__ import __version__, __github__, __WELCOME__, __BYE__
-    from aivk.base import fs
-    from aivk.base.models import GlobalVar
+    from aivk.base.aivkio import AivkIO
 
 logger = logging.getLogger("aivk.cli")
 
@@ -41,52 +39,91 @@ def cli(debug):
 
 @cli.command(name="init")
 @click.option("--force", "-f", is_flag=True, help="Force overwrite the existing aivk root directory")
-@click.option("--path", "-p", type=click.Path(writable=True), envvar="AIVK_ROOT", help="Path to the aivk root directory")
+@click.option("--path", "-p", type=click.Path(writable=True, resolve_path=True), envvar="AIVK_ROOT", help="Path to the aivk root directory")
 def init(path, force):
     """Initialize the AIVK root directory"""
     try:
+        # 增加更多调试日志
+        logger.debug(f"开始初始化 AIVK 根目录，参数: path={path}, force={force}")
+        
         path_obj = Path(path) if path else None
-        # 如果指定了路径，先设置到 GlobalVar 中
-        if path_obj:
-            GlobalVar.set_aivk_root(path_obj)
-            
-        result = asyncio.run(fs.initialize(path=path_obj, force=force))
-        logger.info(f"Successfully initialized AIVK at {result}")
+        # 如果指定了路径，先设置到 AivkIO 中
+        if path_obj and path_obj != AivkIO.get_aivk_root():
+            original_path = AivkIO.get_aivk_root()
+            logger.debug(f"设置 AIVK 根目录: {original_path} -> {path_obj.absolute()}")
+            AivkIO.set_aivk_root(path_obj.absolute())
+            logger.info(f" {original_path} —> {path_obj.absolute()}")
+        
+        # 显示当前设置的根目录
+        logger.debug(f"当前 AIVK_ROOT = {AivkIO.get_aivk_root()}")
+        
+        # 使用 asyncio.run 来运行异步函数
+        logger.debug(f"正在调用 AivkIO.fs_init(force={force})")
+        try:
+            AIVK_ROOT = asyncio.run(AivkIO.fs_init(force=force))
+            logger.info(f"Successfully initialized AIVK at {AIVK_ROOT} !")
+        except Exception as e:
+            logger.error(f"初始化失败: {e}")
+            # 记录更多调试信息
+            import traceback
+            logger.debug(f"详细错误信息: {traceback.format_exc()}")
+            raise
+
     except FileExistsError as e:
         logger.error(str(e))
         sys.exit(1)
     except Exception as e:
-        logger.error(f"Failed to initialize AIVK: {e}")
+        logger.error(f"Failed to initialize AIVK: {str(e)}")
         sys.exit(1)
 
 
 @cli.command(name="mount")
-@click.option("--path", "-p", type=click.Path(), envvar="AIVK_ROOT", help="Path to the aivk root directory")
-@click.option("--interactive", "-i", is_flag=True, default=True, help="Enter interactive shell after mounting (default: True)")
+@click.option("--path", "-p", type=click.Path(resolve_path=True), envvar="AIVK_ROOT", help="Path to the aivk root directory")
+@click.option("--interactive", "-i", is_flag=True, help="Enter interactive shell after mounting (default: True)")
 @click.option("--no-interactive", "-n", is_flag=True, help="Do not enter interactive shell after mounting")
 def mount(path, interactive, no_interactive):
     """Mount the AIVK root directory"""
     try:
+        # 增加更多调试日志
+        logger.debug(f"开始挂载 AIVK 根目录，参数: path={path}")
+        
         path_obj = Path(path) if path else None
-        # 如果指定了路径，先设置到 GlobalVar 中
-        if path_obj:
-            GlobalVar.set_aivk_root(path_obj)
+        # 如果指定了路径
+        if path_obj and path_obj.absolute() != AivkIO.get_aivk_root():
+            original_path = AivkIO.get_aivk_root()
+            logger.debug(f"设置 AIVK 根目录: {original_path} -> {path_obj.absolute()}")
+            AivkIO.set_aivk_root(path_obj.absolute())
+            logger.info(f" {original_path} —> {path_obj.absolute()}")
+        
+        # 显示当前设置的根目录
+        logger.debug(f"当前 AIVK_ROOT = {AivkIO.get_aivk_root()}")
+        
+        # 使用 asyncio.run 运行异步函数
+        logger.debug(f"正在调用 AivkIO.fs_mount()")
+        try:
+            AIVK_ROOT = asyncio.run(AivkIO.fs_mount())
+            logger.info(f"Successfully mounted AIVK at {AIVK_ROOT}")
             
-        result = asyncio.run(fs.mount(path=path_obj))
-        if result:
-            logger.info(f"Successfully mounted AIVK at {GlobalVar.get_aivk_root()}")
             # 如果明确指定了 no_interactive，则不进入交互界面
             if no_interactive:
                 interactive = False
             if interactive:
                 # 进入交互式界面
-                interactive_shell()  # 不再传递路径，由 GlobalVar 统一管理
+                interactive_shell()
+        except Exception as e:
+            logger.error(f"挂载失败: {e}")
+            # 记录更多调试信息
+            import traceback
+            logger.debug(f"详细错误信息: {traceback.format_exc()}")
+            raise
     except FileNotFoundError as e:
         logger.error(str(e))
         sys.exit(1)
     except Exception as e:
         logger.error(f"Failed to mount AIVK: {e}")
         sys.exit(1)
+
+
 
 
 @cli.command(name="shell")
@@ -96,18 +133,17 @@ def shell(path):
     path_obj = Path(path) if path else None
     
     # 如果指定了路径，先设置到 GlobalVar 中
-    if path_obj:
-        GlobalVar.set_aivk_root(path_obj)
+    if path_obj and path_obj != AivkIO.get_aivk_root():
+        original_path = AivkIO.get_aivk_root()
+        AivkIO.set_aivk_root(path_obj.absolute())
+        logger.info(f" {original_path} —> {path_obj.absolute()}")
     
-    # 检查是否已初始化
-    if not fs.is_initialized():  # 不再传递路径参数，统一由 GlobalVar 管理
-        logger.warning("AIVK is not initialized. Please run 'aivk init' first.")
+    if not AivkIO.is_aivk_root():
+        logger.error(f"pls init AIVK_ROOT first  !")
         sys.exit(1)
+
     
     try:
-        # 先确保挂载
-        asyncio.run(fs.mount())  # 不再传递路径参数
-        # 然后进入交互式界面
         interactive_shell()  # 不再传递路径参数
     except Exception as e:
         logger.error(f"Failed to start interactive shell: {e}")
@@ -118,8 +154,8 @@ def interactive_shell():
     """
     AIVK 交互式命令行界面
     """
-    # 从 GlobalVar 获取根目录路径
-    path = GlobalVar.get_aivk_root()
+    # 从 AivkIO 获取根目录路径
+    path = AivkIO.get_aivk_root()
     
     # 显示欢迎信息
     print(__WELCOME__)
@@ -230,7 +266,7 @@ def cmd_status(args, path):
     print("AIVK Status:")
     print(f"  Version: {__version__}")
     print(f"  Root: {path}")
-    print(f"  Initialized: {fs.is_initialized(path)}")
+    print(f"  Initialized: {'Yes' if AivkIO.is_aivk_root() else 'No'}")
     
     # 读取配置文件获取更多信息
     try:
@@ -313,8 +349,8 @@ def cmd_cd(args, path):
             return True, path.parent
         
         if args == "~" or args == "/":
-            # 使用 GlobalVar 获取根目录
-            return True, GlobalVar.get_aivk_root()
+            # 使用 AivkIO 获取根目录
+            return True, AivkIO.get_aivk_root()
         
         # 尝试解析路径
         target = path / args if not args.startswith("/") else Path(args)
@@ -405,9 +441,9 @@ def cmd_mkdir(args, path):
 def status():
     """Show the status of AIVK"""
     logger.info("Checking AIVK status...")
-    # 检查是否初始化，使用 GlobalVar 获取根目录
-    root_path = GlobalVar.get_aivk_root()
-    initialized = fs.is_initialized()  # 不再传递路径参数
+    # 检查是否初始化，使用 AivkIO 获取根目录和检查初始化状态
+    root_path = AivkIO.get_aivk_root()
+    initialized = AivkIO.is_aivk_root()
     
     if initialized:
         logger.info(f"AIVK is initialized at: {root_path}")
@@ -427,45 +463,53 @@ def mcp(transport: str, host: str, port: int, path: str, save_config: bool):
     # 如果提供了路径，设置 AIVK 根目录
     if path:
         path_obj = Path(path)
-        GlobalVar.set_aivk_root(path_obj)
+        AivkIO.set_aivk_root(path_obj)
         logger.info(f"使用指定的 AIVK 根目录: {path_obj}")
     
     # 确保 AIVK 根目录已初始化
-    root_path = GlobalVar.get_aivk_root()
-    if not fs.is_initialized():
+    root_path = AivkIO.get_aivk_root()
+    if not AivkIO.is_aivk_root():
         logger.warning(f"AIVK 根目录 {root_path} 未初始化。尝试挂载...")
         try:
-            asyncio.run(fs.mount())
+            asyncio.run(AivkIO.fs_mount())
         except Exception as e:
             logger.error(f"挂载 AIVK 根目录失败: {e}")
             sys.exit(1)
     
-    # 首先尝试从参数获取值，如果没有提供则使用配置系统
-    if host is not None:
-        GlobalVar.set("host", host)
-    else:
-        host = GlobalVar.get_host()
-        
-    if port is not None:
-        GlobalVar.set("port", port)
-    else:
-        port = GlobalVar.get_port()
+    # 设置默认值
+    default_host = "localhost"
+    default_port = 10140
+    
+    # 使用参数提供的值，否则使用默认值
+    host = host if host is not None else default_host
+    port = port if port is not None else default_port
     
     # 如果需要保存配置
     if save_config:
-        # 获取 AIVK 根目录路径，使用 GlobalVar
+        # 获取 AIVK 根目录路径
         config_path = root_path / "etc" / "aivk" / "config.toml"
         
         # 确保目录存在
         config_path.parent.mkdir(parents=True, exist_ok=True)
         
-        # 更新配置并保存
-        config = GlobalVar.get_config()
-        config.host = host
-        config.port = port
-        GlobalVar.save_config(config_path)
-        logger.info(f"配置已保存至: {config_path}")
-        logger.info(f"配置详情: host={host}, port={port}")
+        # 创建或更新配置
+        import toml
+        try:
+            if config_path.exists():
+                config = toml.load(config_path)
+            else:
+                config = {}
+                
+            config["host"] = host
+            config["port"] = port
+            
+            with open(config_path, 'w') as f:
+                toml.dump(config, f)
+                
+            logger.info(f"配置已保存至: {config_path}")
+            logger.info(f"配置详情: host={host}, port={port}")
+        except Exception as e:
+            logger.error(f"保存配置失败: {e}")
     
     print(f"Transport: {transport}, Host: {host}, Port: {port}")
     print(f"AIVK 根目录: {root_path}")
