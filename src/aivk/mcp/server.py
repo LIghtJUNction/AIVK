@@ -37,15 +37,13 @@ def status():
             "status": f"AIVK is not initialized ! :{str(root)}",  
         }
     
-
-
     
-@mcp.tool(name="init aivk root dir", instructions="initialize aivk root dir", mime_type="text/plain")
+@mcp.tool(name="init_aivk_root_dir", description="initialize aivk root dir")
 def init_aivk_root_dir(path: str ):
     """初始化 AIVK 根目录
     path: str, AIVK 根目录路径
     """
-    #  为了安全起见， 不允许AI使用强制模式，以免删除重要文件
+    # 为了安全起见， 不允许AI使用强制模式，以免删除重要文件
     root = Path(path)
         
     # 记录初始化步骤
@@ -80,7 +78,7 @@ def init_aivk_root_dir(path: str ):
     # 返回详细的初始化信息
     return f"AIVK根目录初始化成功！\n\n初始化过程详情:\n" + "\n".join(steps)
 
-@mcp.tool(name="mount aivk root dir", instructions="mount aivk root dir", mime_type="text/plain")
+@mcp.tool(name="mount_aivk_root_dir", description="mount aivk root dir")
 def mount_aivk_root_dir(path: str = None):
     """挂载 AIVK 根目录
     path: str, AIVK 根目录路径
@@ -158,12 +156,12 @@ def root():
         "aivk_root": str(GlobalVar.get_aivk_root())
     }
 
-@mcp.tool(name="ping", instructions="send ping response", mime_type="text/plain")
+@mcp.tool(name="ping", description="send ping response")
 def ping():
     """返回 AIVK ping 响应信息"""
     return "pong!"
 
-@mcp.tool(name="set aivk root dir", instructions="set aivk root dir", mime_type="text/plain")
+@mcp.tool(name="set_aivk_root_dir", description="set aivk root dir")
 def set_aivk_root_dir(path: str):
     """设置 AIVK 根目录"""
     GlobalVar.set_aivk_root(path)
