@@ -1,13 +1,10 @@
 """
 文件系统操作模块，包含 AIVK 文件系统初始化、挂载等功能
 """
-
 import os
 import logging
-import datetime
 from pathlib import Path
-from pydantic import BaseModel
-import toml
+
 
 try:
     from ..__about__ import __version__, __github__
@@ -18,12 +15,13 @@ except ImportError:
 
 logger = logging.getLogger("aivk.fs")
 
-class AivkFS(BaseModel):
+class AivkFS:
     """
     AIVK 文件系统操作类
     
     提供初始化、挂载 AIVK 根目录等文件系统操作
     """
+    # 定义为普通类变量，而不是 pydantic 模型字段
     AIVK_ROOT: Path = Path(os.getenv("AIVK_ROOT", str(Path().home() / ".aivk")))
 
     @classmethod
@@ -45,12 +43,17 @@ class AivkFS(BaseModel):
         """
         获取指定文件路径
         
-
+        :param file: 文件路径
+        :param exist: 是否确保文件存在，默认为 True
         :return: 指定文件路径
         """
         path = cls.AIVK_ROOT / file
 
         if not path.exists() and exist:
+            # 确保父目录存在
+            parent_dir = path.parent
+            parent_dir.mkdir(parents=True, exist_ok=True)
+            # 创建文件
             path.touch(exist_ok=True)
         return path
 

@@ -64,7 +64,7 @@ class AivkIO:
             # 检查是否为空
             if any(cls.AIVK_ROOT.iterdir()):
                 shutil.rmtree(cls.AIVK_ROOT)
-                logger.warning(f"强制初始化 AIVK 根目录: {cls.AIVK_ROOT} \n 清空")
+                logger.warning(f"强制初始化 AIVK 根目录: {cls.AIVK_ROOT} \n 已清空!")
             else:
                 logger.info(f"当前 AIVK 根目录为空: {cls.AIVK_ROOT}")
 
@@ -99,7 +99,7 @@ class AivkIO:
             current_time = datetime.datetime.now().isoformat()
             aivk_info = {
                 "metadata": {
-                    "aivk": "https://github.com/LIghtJUNction/AIVK",
+                    "aivk": __github__,
                     "version": __version__,  
                     "created": current_time,
                     "updated": current_time,
@@ -298,9 +298,6 @@ class AivkIO:
         :param config: 配置字典
         :return: 是否保存成功
         """
-        # 检查并注册调用方
-        cls._check_and_register_caller()
-        
         try:
             config_path = AivkFS.config_file(id, exist=True)
             # 确保目录存在
