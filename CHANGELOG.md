@@ -8,7 +8,7 @@
 ## [0.3.3.0] - 2025-04-16
 
 ### 新增
-(Wow)
+(Wow ...)
 *   **核心 IO (`AivkIO`)**:
     *   实现 AIVK 根目录的初始化 (`fs_init`) 和挂载 (`fs_mount`) 功能。
     *   提供设置 (`set_aivk_root`) 和获取 (`get_aivk_root`) AIVK 根目录的方法。
