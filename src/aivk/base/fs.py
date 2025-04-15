@@ -10,7 +10,7 @@ try:
     from ..__about__ import __version__, __github__
     
 except ImportError:
-    from aivk.__about__ import __version__, __github__
+    pass
         
 
 logger = logging.getLogger("aivk.fs")

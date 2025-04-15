@@ -195,7 +195,7 @@ class AivkIO:
         dotaivk = cls.AIVK_ROOT / ".aivk"
         if not dotaivk.exists():
             logger.error(f"AIVK 根目录未初始化，.aivk 标记文件不存在: {dotaivk}")
-            raise FileNotFoundError(f"AIVK 根目录未初始化，请先运行 'aivk init'")
+            raise FileNotFoundError("AIVK 根目录未初始化，请先运行 'aivk init'")
         
         try:
             # 读取.aivk文件，验证格式
@@ -205,7 +205,7 @@ class AivkIO:
             
             # 检查是否包含必要的字段
             if "metadata" not in dotaivk_content:
-                logger.warning(f".aivk 文件格式不正确，缺少 metadata 部分")
+                logger.warning(".aivk 文件格式不正确，缺少 metadata 部分")
                 # 尝试修复
                 dotaivk_content["metadata"] = {
                     "aivk": "https://github.com/LIghtJUNction/AIVK",
@@ -214,7 +214,7 @@ class AivkIO:
                     "updated": datetime.now().isoformat(),
                     "path": str(cls.AIVK_ROOT)
                 }
-                logger.info(f"已自动添加缺失的 metadata 部分")
+                logger.info("已自动添加缺失的 metadata 部分")
             
             # 更新访问时间
             dotaivk_content["metadata"]["accessed"] = datetime.now().isoformat()
@@ -223,7 +223,7 @@ class AivkIO:
             # 将修改保存回文件
             with open(dotaivk, 'w', encoding='utf-8') as f:
                 toml.dump(dotaivk_content, f)
-            logger.debug(f"已更新 .aivk 文件的访问时间")
+            logger.debug("已更新 .aivk 文件的访问时间")
             
             # 检查基本目录结构是否完整
             basic_dirs = ["etc", "etc/aivk", "cache", "data", "tmp", "home"]
@@ -240,7 +240,7 @@ class AivkIO:
                 logger.warning(f"挂载过程中发现并修复了缺失的目录: {', '.join(missing_dirs)}")
             
             # 调用底层mount方法
-            logger.debug(f"调用 AivkFS.mount()")
+            logger.debug("调用 AivkFS.mount()")
             path = await AivkFS.mount()
             logger.info(f"成功挂载AIVK根目录: {path}")
             
@@ -377,7 +377,7 @@ class AivkIO:
                 # 如果文件不存在，表示尚未初始化
                 import logging
                 logger = logging.getLogger("aivk.io")
-                logger.error(f"AIVK 根目录未初始化，无法添加模块 ID")
+                logger.error("AIVK 根目录未初始化，无法添加模块 ID")
                 return False
                 
             # 读取现有内容
