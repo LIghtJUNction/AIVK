@@ -514,6 +514,61 @@ def help_cmd(command_name):
         # 显示通用帮助信息
         click.echo(cli.get_help(ctx))
 
+@cli.command(name="test-executor")
+@click.option("--command", "-c", help="要执行的命令", required=True)
+@click.option("--shell/--no-shell", default=True, help="是否在shell中执行")
+@click.option("--new-process/--no-new-process", default=True, help="是否在新进程中执行")
+@click.option("--async-mode/--sync-mode", default=True, help="是否使用异步模式")
+@click.option("--timeout", "-t", type=float, default=None, help="超时时间（秒）")
+@click.option("--cwd", default=None, help="工作目录")
+def exec(command, shell, new_process, async_mode, timeout, cwd):
+    """
+    测试命令执行器
+    
+    用于测试 AivkExecuter 的执行功能，特别是 new_process 参数的效果。
+    """
+    from aivk.base.utils import AivkExecuter
+    import asyncio
+    import os
+    
+    click.echo(f"执行命令: {command}")
+    click.echo(f"参数: shell={shell}, new_process={new_process}, async_mode={async_mode}, timeout={timeout}, cwd={cwd}")
+    
+    env = os.environ.copy()
+    
+    if async_mode:
+        click.echo("使用异步模式执行...")
+        try:
+            result = asyncio.run(AivkExecuter.aexec(
+                command=command,
+                shell=shell,
+                new_process=new_process,
+                timeout=timeout,
+                cwd=cwd,
+                env=env,
+                stream_output=True
+            ))
+            click.echo(f"命令执行结果: {result}")
+            click.echo(f"状态: {result.status.value}, 返回码: {result.return_code}")
+            click.echo(f"执行时间: {result.execution_time:.2f}秒")
+        except Exception as e:
+            click.echo(f"执行出错: {e}", err=True)
+    else:
+        click.echo("使用同步模式执行...")
+        try:
+            result = AivkExecuter.exec(
+                command=command,
+                shell=shell,
+                timeout=timeout,
+                cwd=cwd,
+                env=env,
+                stream_output=True
+            )
+            click.echo(f"命令执行结果: {result}")
+            click.echo(f"状态: {result.status.value}, 返回码: {result.return_code}")
+            click.echo(f"执行时间: {result.execution_time:.2f}秒")
+        except Exception as e:
+            click.echo(f"执行出错: {e}", err=True)
 
 if __name__ == "__main__":
     cli()

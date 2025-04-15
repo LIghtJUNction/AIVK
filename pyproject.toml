@@ -1,6 +1,6 @@
 [project]
 name = "aivk"
-version = "0.3.2.7"
+version = "0.3.2.10"
 description = "Aivk is ai Virtual Kernel"
 readme = "README.md"
 authors = [
