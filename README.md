@@ -19,7 +19,6 @@ AIVK 是一个面向 AI 的虚拟内核（AI Virtual Kernel），支持模块化
 - 类型检查支持（py.typed）
 
 ## 安装
-
 建议使用 Python 3.13+，推荐使用 uv 进行依赖管理。
 
 ```bash
