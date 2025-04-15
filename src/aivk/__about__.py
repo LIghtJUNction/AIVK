@@ -2,7 +2,7 @@
 # aivk - module
 __id__ : str = "aivk"
 __name__ : str = "AIVK"
-__version__ : str = "0.3.2.20"
+__version__ : str = "0.3.3.0"
 
 __author__ : str = "LIghtJUNction"
 __license__ : str = "MIT"
@@ -16,9 +16,9 @@ __github__ : str = "https://github.com/LIghtJUNction/AIVK"
 # PyProject.toml 配置
 __root__ : dict = {
     "project": {
-        "name": "aivk_root",
+        "name": "aivk_agent",
         "version": __version__,
-        "description": "aivk root directory",
+        "description": "This a aivk module / mcp serve / uv projrct / build by AI Agent.",
         "authors": [
             {"name": __author__, "email": __email__}
         ],
@@ -30,7 +30,11 @@ __root__ : dict = {
         "requires": ["hatchling"],
         "build-backend": "hatchling.build"
     },
+    "tool.hatch.build.targets.wheel": {
+        "packages": ["src/aivk_agent"]
+    }
 }
+
 
     
 

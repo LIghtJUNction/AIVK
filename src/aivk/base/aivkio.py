@@ -79,7 +79,8 @@ class AivkIO:
         
         # 创建基本目录结构
         logger.debug("开始创建基本目录结构...")
-        basic_dirs = ["etc", "etc/aivk", "cache", "data", "tmp", "home"]
+        # 修改 basic_dirs 列表，确保 aivk_agent 在 src 目录下创建
+        basic_dirs = ["etc", "etc/aivk", "cache", "data", "tmp", "home" , "src" , "src/aivk_agent"]
         for dir_name in basic_dirs:
             dir_path = root_path / dir_name
             try:
@@ -88,7 +89,20 @@ class AivkIO:
             except Exception as e:
                 logger.error(f"创建目录 {dir_name} 失败: {e}")
                 raise RuntimeError(f"创建基本目录结构失败: {e}")
-        
+
+        # 在 src/aivk_agent 目录下创建 __init__.py 文件
+        init_py_path = root_path / "src" / "aivk_agent" / "__init__.py"
+        py_typed_path = root_path / "src" / "aivk_agent" / "py.typed"
+        try:
+            init_py_path.touch(exist_ok=True)
+            logger.debug(f"创建 __init__.py 文件成功: {init_py_path}")
+            py_typed_path.touch(exist_ok=True)
+            logger.debug(f"创建 py.typed 文件成功: {py_typed_path}")
+        except Exception as e:
+            logger.error(f"创建 __init__.py/py.typed 文件失败: {e}")
+            # 虽然失败，但不一定是致命错误，继续执行
+            # raise RuntimeError(f"创建 __init__.py 文件失败: {e}")
+
         # 创建基本的 .aivk 文件，确保结构与预期一致
         logger.debug(f"创建 .aivk 标记文件: {dotaivk}")
         try:

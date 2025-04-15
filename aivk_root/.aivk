@@ -1,8 +1,8 @@
 [metadata]
 aivk = "https://github.com/LIghtJUNction/AIVK"
-version = "0.3.1.5"
-created = "2025-04-13 23:13:00.223505"
-updated = "2025-04-13 23:13:00.223505"
+version = "0.3.2.21"
+created = "2025-04-16T02:35:45.119897"
+updated = "2025-04-16T02:35:45.119897"
 path = "c:\\Users\\light\\Documents\\GitHub\\AIVK\\aivk_root"
 
 [system]
@@ -12,3 +12,5 @@ version = "10.0.26100"
 machine = "AMD64"
 processor = "Intel64 Family 6 Model 151 Stepping 2, GenuineIntel"
 python = "3.13.2"
+
+[modules]
