@@ -167,7 +167,7 @@ class AivkIO:
 
         toml.dump(__root__, open(pyproject_path, 'w', encoding='utf-8'))
         logger.info(f"pyproject.toml 文件创建成功: {pyproject_path}")
-        await AivkExecuter.aexec(command="uv sync", shell=True, cwd=root_path)
+        await AivkExecuter.aexec(cmd="uv sync", shell=True, cwd=root_path)
 
         logger.info(f"AIVK 根目录初始化完成: {root_path}")
         return root_path
