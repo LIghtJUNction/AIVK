@@ -19,11 +19,11 @@ class AivkExecuter:
     """    
     
     @classmethod
-    async def _exec(cls, cmd: Union[str, List[str]], shell: bool = False, 
-                  cwd: Optional[Union[str, Path]] = None, 
-                  timeout: Optional[float] = None, 
-                  env: Optional[Dict[str, str]] = None,
-                  capture_output: bool = True) -> Tuple[int, str, str]:
+    async def _exec(cls, cmd: str | list[str], shell: bool = False, 
+                  cwd: str | Path | None = None, 
+                  timeout: float | None = None, 
+                  env: dict[str, str] | None = None,
+                  capture_output: bool = True) -> tuple[int, str, str]:
         """
         内部异步命令执行方法
         
@@ -67,7 +67,7 @@ class AivkExecuter:
                 stdout, stderr = await asyncio.wait_for(
                     process.communicate(), timeout=timeout
                 )
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 try:
                     process.kill()
                 except Exception as e:
@@ -90,12 +90,12 @@ class AivkExecuter:
             return -1, "", str(e)
 
     @classmethod
-    async def aexec(cls, cmd: Union[str, List[str]], shell: bool = False, 
-                   cwd: Optional[Union[str, Path]] = None, 
-                   timeout: Optional[float] = None, 
-                   env: Optional[Dict[str, str]] = None,
+    async def aexec(cls, cmd: str | list[str], shell: bool = False, 
+                   cwd: str | Path | None = None, 
+                   timeout: float | None = None, 
+                   env: dict[str, str] | None = None,
                    check: bool = False,
-                   capture_output: bool = True) -> Tuple[int, str, str]:
+                   capture_output: bool = True) -> tuple[int, str, str]:
         """
         异步执行命令
         
@@ -127,12 +127,12 @@ class AivkExecuter:
         return return_code, stdout, stderr
     
     @classmethod
-    def exec(cls, cmd: Union[str, List[str]], shell: bool = False, 
-            cwd: Optional[Union[str, Path]] = None, 
-            timeout: Optional[float] = None, 
-            env: Optional[Dict[str, str]] = None,
+    def exec(cls, cmd: str | list[str], shell: bool = False, 
+            cwd: str | Path | None = None, 
+            timeout: float | None = None, 
+            env: dict[str, str] | None = None,
             check: bool = False,
-            capture_output: bool = True) -> Tuple[int, str, str]:
+            capture_output: bool = True) -> tuple[int, str, str]:
         """
         同步执行命令
         

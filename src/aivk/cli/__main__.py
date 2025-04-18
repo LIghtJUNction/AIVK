@@ -4,7 +4,9 @@ import logging
 from pathlib import Path
 import sys
 import os
-from typing import Callable, TypeVar, Literal
+from typing import TypeVar, Literal
+
+from collections.abc import Callable
 from collections.abc import Sequence
 
 try:
@@ -243,7 +245,7 @@ def cmd_status(_args: str, path: Path) -> bool:
         dotaivk_file = path / ".aivk"
         if dotaivk_file.exists():
             import toml
-            with open(dotaivk_file, "r") as f:
+            with open(dotaivk_file) as f:
                 config = toml.load(f)
             
             # 使用类型注解解决 Any 类型警告
@@ -370,7 +372,7 @@ def cmd_cat(args: str, path: Path) -> bool:
                 return True
         
         # 读取文件内容
-        with open(file_path, "r", errors="replace") as f:
+        with open(file_path, errors="replace") as f:
             content = f.read()
             
         # 显示文件内容
