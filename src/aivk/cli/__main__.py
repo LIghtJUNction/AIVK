@@ -4,6 +4,8 @@ import logging
 from pathlib import Path
 import sys
 import os
+from typing import Callable, TypeVar, Literal
+from collections.abc import Sequence
 
 try:
     from ..__about__ import __version__, __github__ , __WELCOME__, __BYE__
@@ -14,12 +16,14 @@ except ImportError:
 
 logger = logging.getLogger("aivk.cli")
 
-# 定义可用的命令
-COMMANDS = {}
-HELP_TEXT = {}
-ALIASES = {}
+T = TypeVar('T')  # 定义泛型类型变量
 
-def register_command(name, func, help_text, aliases=None):
+# 定义可用的命令
+COMMANDS: dict[str, Callable[..., bool | tuple[bool, Path | None]]] = {}
+HELP_TEXT: dict[str, str] = {}
+ALIASES: dict[str, str] = {}
+
+def register_command(name: str, func: Callable[..., bool | tuple[bool, Path | None]], help_text: str, aliases: Sequence[str] | None = None) -> None:
     """注册一个命令到交互式界面"""
     COMMANDS[name] = func
     HELP_TEXT[name] = help_text
@@ -30,7 +34,7 @@ def register_command(name, func, help_text, aliases=None):
 @click.group(name="aivk")
 @click.option("--debug", "-d", is_flag=True, help="Enable debug logging")
 @click.version_option(version=__version__, prog_name="AIVK")
-def cli(debug):
+def cli(debug: bool) -> None:
     """AIVK CLI"""
     log_level = logging.DEBUG if debug else logging.INFO
     logging.basicConfig(level=log_level, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -39,10 +43,10 @@ def cli(debug):
 @cli.command(name="init")
 @click.option("--force", "-f", is_flag=True, help="Force overwrite the existing aivk root directory")
 @click.option("--path", "-p", help="Path to the aivk root directory")
-def init(path, force):
+def init(path: str | None, force: bool) -> None:
     """Initialize the AIVK root directory"""
 
-        # 增加更多调试日志
+    # 增加更多调试日志
     logger.debug(f"开始初始化 AIVK 根目录，参数: path={path}, force={force}")
     
     path_obj = Path(path) if path else None
@@ -58,14 +62,14 @@ def init(path, force):
     
     # 使用 asyncio.run 来运行异步函数
     logger.debug(f"正在调用 AivkIO.fs_init(force={force})")
-    AIVK_ROOT = asyncio.run(AivkIO.fs_init(force=force))
+    _ = asyncio.run(AivkIO.fs_init(force=force))
 
 
 
 @cli.command(name="mount")
 @click.option("--path", "-p", help="Path to the aivk root directory")
 @click.option("--interactive", "-i", is_flag=True, help="Enter interactive shell after mounting (default: True)")
-def mount(path, interactive):
+def mount(path: str | None, interactive: bool) -> None:
     """Mount the AIVK root directory"""
 
     # 增加更多调试日志
@@ -85,7 +89,7 @@ def mount(path, interactive):
     # 使用 asyncio.run 运行异步函数
     logger.debug("正在调用 AivkIO.fs_mount()")
 
-    AIVK_ROOT = asyncio.run(AivkIO.fs_mount())
+    _ = asyncio.run(AivkIO.fs_mount())
     logger.info("You can use aivk mount -i / aivk shell to enter interactive shell")
     
     if interactive:
@@ -94,7 +98,7 @@ def mount(path, interactive):
 
 @cli.command(name="shell")
 @click.option("--path", "-p", type=click.Path(), envvar="AIVK_ROOT", help="Path to the aivk root directory")
-def shell(path):
+def shell(path: str | None) -> None:
     """Enter the interactive AIVK shell"""
     path_obj = Path(path) if path else None
     
@@ -137,7 +141,7 @@ def interactive_shell():
     register_command("version", cmd_version, "Show AIVK version", ["ver"])
     
     # 注册文件系统命令
-    register_command("ls", cmd_ls, "List files and directories", ["dir", "list"])
+    register_command("ls", cmd_ls, "list files and directories", ["dir", "list"])
     register_command("cd", cmd_cd, "Change current directory", ["chdir"])
     register_command("pwd", cmd_pwd, "Print working directory", ["cwd"])
     register_command("cat", cmd_cat, "Display content of a file", ["type", "show"])
@@ -198,7 +202,7 @@ def interactive_shell():
 
 
 # 交互式命令实现
-def cmd_help(args, path):
+def cmd_help(args: str, path: Path) -> bool:
     """显示帮助信息"""
     print("Available commands:")
     for name, help_text in sorted(HELP_TEXT.items()):
@@ -215,19 +219,19 @@ def cmd_help(args, path):
     return True
 
 
-def cmd_exit(args, path):
+def cmd_exit(_args: str, _path: Path) -> bool:
     """退出交互式界面"""
     print("Exiting AIVK shell...")
     return False
 
 
-def cmd_clear(args, path):
+def cmd_clear(_args: str, _path: Path) -> bool:
     """清屏"""
-    os.system('cls' if os.name == 'nt' else 'clear')
+    _ = os.system('cls' if os.name == 'nt' else 'clear')
     return True
 
 
-def cmd_status(args, path):
+def cmd_status(_args: str, path: Path) -> bool:
     """显示AIVK状态"""
     print("AIVK Status:")
     print(f"  Version: {__version__}")
@@ -242,24 +246,26 @@ def cmd_status(args, path):
             with open(dotaivk_file, "r") as f:
                 config = toml.load(f)
             
-            print(f"  Created: {config['metadata'].get('created', 'Unknown')}")
-            print(f"  Updated: {config['metadata'].get('updated', 'Unknown')}")
-            if 'accessed' in config['metadata']:
-                print(f"  Last accessed: {config['metadata']['accessed']}")
+            # 使用类型注解解决 Any 类型警告
+            metadata: dict[str, str] = config.get('metadata', {})
+            print(f"  Created: {metadata.get('created', 'Unknown')}")
+            print(f"  Updated: {metadata.get('updated', 'Unknown')}")
+            if 'accessed' in metadata:
+                print(f"  Last accessed: {metadata['accessed']}")
     except Exception as e:
         print(f"  Error reading config: {e}")
     
     return True
 
 
-def cmd_version(args, path):
+def cmd_version(_args: str, _path: Path) -> bool:
     """显示版本信息"""
     print(f"AIVK version: {__version__}")
     print(f"GitHub: {__github__}")
     return True
 
 
-def cmd_ls(args, path):
+def cmd_ls(args: str, path: Path) -> bool:
     """列出文件和目录"""
     try:
         # 解析参数
@@ -304,7 +310,7 @@ def cmd_ls(args, path):
     return True
 
 
-def cmd_cd(args, path):
+def cmd_cd(args: str, path: Path) -> tuple[bool, Path | None]:
     """更改当前目录"""
     try:
         # 处理特殊情况
@@ -331,13 +337,13 @@ def cmd_cd(args, path):
     return True, None
 
 
-def cmd_pwd(args, path):
+def cmd_pwd(_args: str, path: Path) -> bool:
     """打印工作目录"""
     print(f"Current directory: {path.resolve()}")
     return True
 
 
-def cmd_cat(args, path):
+def cmd_cat(args: str, path: Path) -> bool:
     """显示文件内容"""
     if not args:
         print("Error: No file specified")
@@ -379,7 +385,7 @@ def cmd_cat(args, path):
     return True
 
 
-def cmd_mkdir(args, path):
+def cmd_mkdir(args: str, path: Path) -> bool:
     """创建新目录"""
     if not args:
         print("Error: No directory name specified")
@@ -424,7 +430,7 @@ def status():
 @click.option("--port", default=None, type=int, help="Port for aivk MCP server (default: 10140)")
 @click.option("--path", "-p", type=click.Path(), envvar="AIVK_ROOT", help="Path to the aivk root directory")
 @click.option("--save-config", is_flag=True, help="Save host and port to config file")
-def mcp(transport: str, host: str, port: int, path: str, save_config: bool):
+def mcp(transport: Literal["stdio", "sse"], host: str | None, port: int | None, path: str, save_config: bool) -> None:
     """MCP command to handle transport methods."""
     # 如果提供了路径，设置 AIVK 根目录
     if path:
@@ -443,12 +449,8 @@ def mcp(transport: str, host: str, port: int, path: str, save_config: bool):
             sys.exit(1)
     
     # 设置默认值
-    default_host = "localhost"
-    default_port = 10140
-    
-    # 使用参数提供的值，否则使用默认值
-    host = host if host is not None else default_host
-    port = port if port is not None else default_port
+    host_value = "localhost" if host is None else host
+    port_value = 10140 if port is None else port
     
     # 如果需要保存配置
     if save_config:
@@ -456,7 +458,7 @@ def mcp(transport: str, host: str, port: int, path: str, save_config: bool):
         config_path = root_path / "etc" / "aivk" / "config.toml"
         
         # 确保目录存在
-        config_path.parent.mkdir(parents=True, exist_ok=True)
+        _ = config_path.parent.mkdir(parents=True, exist_ok=True)
         
         # 创建或更新配置
         import toml
@@ -466,18 +468,18 @@ def mcp(transport: str, host: str, port: int, path: str, save_config: bool):
             else:
                 config = {}
                 
-            config["host"] = host
-            config["port"] = port
+            config["host"] = host_value
+            config["port"] = port_value
             
             with open(config_path, 'w') as f:
-                toml.dump(config, f)
+                _ = toml.dump(config, f)
                 
             logger.info(f"配置已保存至: {config_path}")
-            logger.info(f"配置详情: host={host}, port={port}")
+            logger.info(f"配置详情: host={host_value}, port={port_value}")
         except Exception as e:
             logger.error(f"保存配置失败: {e}")
     
-    print(f"Transport: {transport}, Host: {host}, Port: {port}")
+    print(f"Transport: {transport}, Host: {host_value}, Port: {port_value}")
     print(f"AIVK 根目录: {root_path}")
     
     # 导入 mcp 模块 (server.py)
@@ -486,14 +488,14 @@ def mcp(transport: str, host: str, port: int, path: str, save_config: bool):
     if transport == "stdio":
         logger.info("正在启动 MCP (stdio transport)...")
     elif transport == "sse":
-        logger.info(f"正在启动 MCP (SSE transport) on {host}:{port}...")
+        logger.info(f"正在启动 MCP (SSE transport) on {host_value}:{port_value}...")
         
     # 运行 MCP 服务器
     mcp.run(transport=transport)
 
 @cli.command(name="help")
-@click.argument("command_name", required=False)
-def help_cmd(command_name):
+@click.argument("command_name", required=False, type=str)
+def help_cmd(command_name: str | None) -> None:
     """Show help information for commands
     
     If COMMAND_NAME is provided, show detailed help for that command.

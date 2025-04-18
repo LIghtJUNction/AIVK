@@ -2,6 +2,8 @@ from datetime import datetime
 import os
 from pathlib import Path
 import shutil
+from typing import Any
+
 import toml
 from .fs import AivkFS
 from ..__about__ import __version__, __github__ , __root__
@@ -11,7 +13,7 @@ class AivkIO:
     """AIVK IO类"""
     # 定义为普通类变量，不作为模型字段
     AIVK_ROOT: Path = Path(os.getenv("AIVK_ROOT", str(Path().home() / ".aivk")))
-    __registered_ids = set()  # 用于跟踪已注册的ID
+    __registered_ids: set[str] = set()  # 用于跟踪已注册的ID
 
     @classmethod
     def set_aivk_root(cls, root: Path) -> None:
@@ -34,7 +36,7 @@ class AivkIO:
         return True
 
     @classmethod
-    def get_path(cls, path: str) -> Path:
+    def get_path(cls, path: str) -> Path:  # 类型注解已正确
         """获取路径"""
         # 这里可以添加其他路径的处理逻辑
         return cls.AIVK_ROOT / path
@@ -255,7 +257,7 @@ class AivkIO:
             
             # 调用底层mount方法
             logger.debug("调用 AivkFS.mount()")
-            path = await AivkFS.mount()
+            path: Path = await AivkFS.mount()  # type: ignore[attr-defined, unused-ignore]
             logger.info(f"成功挂载AIVK根目录: {path}")
             
             # 启动时读取已保存的模块ID
@@ -284,7 +286,7 @@ class AivkIO:
     
 
     @classmethod
-    def get_config(cls, id : str) -> dict:
+    def get_config(cls, id: str) -> dict[str, Any]:
         """获取配置文件
         
         :param id: 配置ID
@@ -305,7 +307,7 @@ class AivkIO:
             return {}
         
     @classmethod
-    def save_config(cls, id : str, config: dict) -> bool:
+    def save_config(cls, id: str, config: dict[str, Any]) -> bool:
         """保存配置文件
         
         :param id: 配置ID
@@ -320,7 +322,7 @@ class AivkIO:
             with open(config_path, "w") as f:
                 toml.dump(config, f)
 
-            aivk_meta = cls.get_meta("aivk")
+            aivk_meta: dict[str, Any] = cls.get_meta("aivk")  # 添加类型注解
             aivk_meta["updated_at"] = datetime.now().isoformat()
             cls.save_meta("aivk", aivk_meta)
 
@@ -333,7 +335,7 @@ class AivkIO:
             return False
 
     @classmethod
-    def get_meta(cls, id : str) -> dict:
+    def get_meta(cls, id: str) -> dict[str, Any]:
         """获取元数据文件
         
         :param id: 元数据ID
@@ -354,7 +356,7 @@ class AivkIO:
             return {}
         
     @classmethod
-    def save_meta(cls, id : str, meta: dict) -> bool:
+    def save_meta(cls, id: str, meta: dict[str, Any]) -> bool:
         """保存元数据文件
         
         :param id: 元数据ID
@@ -377,7 +379,7 @@ class AivkIO:
             return False
 
     @classmethod
-    def add_module_id(cls, module_id: str, **kwargs) -> bool:
+    def add_module_id(cls, module_id: str, **kwargs: dict[str, Any]) -> bool:
         """将模块 ID 添加到 .aivk 标记文件的 [modules] 部分
         
         :param module_id: 模块 ID
@@ -416,7 +418,7 @@ class AivkIO:
                 if "added_at" in existing_info:
                     module_info["added_at"] = existing_info["added_at"]
                 # 合并其他信息
-                dotaivk_dict["modules"][module_id].update(module_info)
+                dotaivk_dict["modules"][module_id].update(module_info.items())  # type: ignore[arg-type]
             else:
                 # 新模块直接添加
                 dotaivk_dict["modules"][module_id] = module_info
@@ -437,7 +439,7 @@ class AivkIO:
             return False
     
     @classmethod
-    def get_module_ids(cls) -> dict:
+    def get_module_ids(cls) -> dict[str, dict[str, Any]]:  # type: ignore[type-arg, no-any-return]
         """从 .aivk 标记文件读取所有模块 ID
         
         :return: 模块 ID 字典，如果加载失败则返回空字典
@@ -460,4 +462,3 @@ class AivkIO:
             logger = logging.getLogger("aivk.io")
             logger.error(f"读取模块 ID 失败: {e}")
             return {}
-

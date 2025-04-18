@@ -23,6 +23,13 @@ class AivkFS:
     """
     # 定义为普通类变量，而不是 pydantic 模型字段
     AIVK_ROOT: Path = Path(os.getenv("AIVK_ROOT", str(Path().home() / ".aivk")))
+    
+    @classmethod
+    async def mount(cls) -> Path:
+        """挂载AIVK文件系统"""
+        # 确保根目录存在
+        cls.AIVK_ROOT.mkdir(parents=True, exist_ok=True)
+        return cls.AIVK_ROOT
 
     @classmethod
     def dir(cls, dir: str, exist: bool) -> Path:
@@ -83,4 +90,3 @@ class AivkFS:
         path = cls.file(f"etc/{id}/config.toml", exist)
 
         return path
-

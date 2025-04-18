@@ -1,6 +1,6 @@
 [project]
 name = "aivk"
-version = "0.3.3.0"
+version = "0.3.3.5"
 description = "Aivk is ai Virtual Kernel"
 readme = "README.md"
 authors = [
@@ -8,7 +8,6 @@ authors = [
 ]
 requires-python = ">=3.13"
 dependencies = [
-    "click>=8.1.8",
     "fastapi>=0.115.12",
     "httpx>=0.28.1",
     "mcp[cli]>=1.6.0",
@@ -19,6 +18,16 @@ dependencies = [
 
 [project.scripts]
 aivk = "aivk.cli.__main__:cli"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.5",
+    "pytest-cov>=6.1.1",
+    "pytest-mock>=3.14.0",
+]
+cli = [
+    "click>=8.1.8",
+]
 
 [build-system]
 requires = ["hatchling", "uv-dynamic-versioning"]
