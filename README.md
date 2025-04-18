@@ -1,5 +1,5 @@
 # AIVK - AI Virtual Kernel
-
+[![Sourcery](https://img.shields.io/badge/Sourcery-enabled-brightgreen)](https://sourcery.ai)
 AIVK 是一个面向 AI 的虚拟内核（AI Virtual Kernel），支持模块化扩展、MCP 协议、命令行交互和自动化管理。
 
 ## 项目简介
