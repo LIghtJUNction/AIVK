@@ -2,15 +2,17 @@
 工具类模块，包含 AIVK 使用的通用工具函数和类
 """
 
+from logging import Logger
+
+
 import shlex
 import subprocess
 import asyncio
 import logging
 import os
 from pathlib import Path
-from typing import List, Union, Dict, Tuple, Optional, Any
 
-logger = logging.getLogger(__name__)
+logger: Logger = logging.getLogger(__name__)
 class AivkExecuter:
     """
     Aivk 命令执行器
@@ -38,8 +40,14 @@ class AivkExecuter:
         Returns:
             返回元组 (返回码, 标准输出, 标准错误)
         """
+        # 处理命令参数
         if isinstance(cmd, str) and not shell:
-            cmd = shlex.split(cmd)
+            cmd_list = shlex.split(cmd)
+        else:
+            cmd_list = cmd if isinstance(cmd, list) else [cmd]
+        
+        # 当 shell=True 时，确保 cmd 是字符串
+        cmd_str = cmd if isinstance(cmd, str) else " ".join([str(c) for c in cmd_list])
         
         # 合并环境变量
         merged_env = os.environ.copy()
@@ -48,20 +56,23 @@ class AivkExecuter:
             
         logger.debug(f"执行命令: {cmd}")
         try:
-            process = await asyncio.create_subprocess_shell(
-                cmd if shell else " ".join([str(c) for c in cmd]),
-                stdout=asyncio.subprocess.PIPE if capture_output else None,
-                stderr=asyncio.subprocess.PIPE if capture_output else None,
-                cwd=cwd,
-                env=merged_env,
-                shell=shell
-            ) if shell else await asyncio.create_subprocess_exec(
-                *cmd,
-                stdout=asyncio.subprocess.PIPE if capture_output else None,
-                stderr=asyncio.subprocess.PIPE if capture_output else None,
-                cwd=cwd,
-                env=merged_env
-            )
+            if shell:
+                process = await asyncio.create_subprocess_shell(
+                    cmd_str,
+                    stdout=asyncio.subprocess.PIPE if capture_output else None,
+                    stderr=asyncio.subprocess.PIPE if capture_output else None,
+                    cwd=cwd,
+                    env=merged_env,
+                    shell=shell
+                )
+            else:
+                process = await asyncio.create_subprocess_exec(
+                    *cmd_list,
+                    stdout=asyncio.subprocess.PIPE if capture_output else None,
+                    stderr=asyncio.subprocess.PIPE if capture_output else None,
+                    cwd=cwd,
+                    env=merged_env
+                )
             
             try:
                 stdout, stderr = await asyncio.wait_for(
@@ -74,7 +85,8 @@ class AivkExecuter:
                     logger.error(f"终止进程失败: {e}")
                 raise TimeoutError(f"命令执行超时 (>{timeout}秒): {cmd}")
                 
-            return_code = process.returncode
+            # 确保返回码是 int 类型
+            return_code = process.returncode if process.returncode is not None else -1
             stdout_str = stdout.decode('utf-8', errors='replace').strip() if stdout and capture_output else ""
             stderr_str = stderr.decode('utf-8', errors='replace').strip() if stderr and capture_output else ""
             

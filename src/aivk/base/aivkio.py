@@ -1,13 +1,68 @@
 from datetime import datetime
+from logging import Logger
+import logging
 import os
 from pathlib import Path
 import shutil
-from typing import Any
+from typing import Any, TypeVar, TypedDict
 
-import toml
+from toml import TomlDecodeError
+from toml import dump as toml_dump
+from toml import load as toml_load
+
 from .fs import AivkFS
 from ..__about__ import __version__, __github__ , __root__
 from ..base.utils import AivkExecuter
+
+logger: Logger = logging.getLogger(__name__)
+
+# 定义类型
+T = TypeVar('T')
+
+class ModuleInfo(TypedDict, total=False):
+    added_at: str
+    updated_at: str
+    version: str
+    
+
+class MetadataDict(TypedDict, total=False):
+    aivk: str
+    version: str
+    created: str
+    updated: str
+    path: str
+    accessed: str
+
+class AivkInfo(TypedDict):
+    metadata: MetadataDict
+    system: dict[str, str]
+    modules: dict[str, ModuleInfo]
+
+# 为 toml 文件定义更具体的类型
+class ModuleInfoDict(TypedDict, total=False):
+    """模块信息字典类型"""
+    added_at: str
+    updated_at: str
+    version: str
+    # 其他可能的字段，使用字符串类型表示
+    github: str
+    description: str
+
+class SystemInfo(TypedDict):
+    """系统信息字典类型"""
+    os: str
+    release: str
+    version: str
+    machine: str
+    processor: str
+    python: str
+
+class DotAivkDict(TypedDict, total=False):
+    """表示.aivk文件内容的字典类型"""
+    metadata: MetadataDict
+    system: SystemInfo
+    modules: dict[str, ModuleInfoDict]
+    updated_at: str
 
 class AivkIO:
     """AIVK IO类"""
@@ -82,7 +137,7 @@ class AivkIO:
         # 创建基本目录结构
         logger.debug("开始创建基本目录结构...")
         # 修改 basic_dirs 列表，确保 aivk_agent 在 src 目录下创建
-        basic_dirs = ["etc", "etc/aivk", "cache", "data", "tmp", "home" , "src" , "src/aivk_agent"]
+        basic_dirs: list[str] = ["etc", "etc/aivk", "cache", "data", "tmp", "home" , "src" , "src/aivk_agent"]
         for dir_name in basic_dirs:
             dir_path = root_path / dir_name
             try:
@@ -96,9 +151,9 @@ class AivkIO:
         init_py_path = root_path / "src" / "aivk_agent" / "__init__.py"
         py_typed_path = root_path / "src" / "aivk_agent" / "py.typed"
         try:
-            init_py_path.touch(exist_ok=True)
+            _ = init_py_path.touch(exist_ok=True)
             logger.debug(f"创建 __init__.py 文件成功: {init_py_path}")
-            py_typed_path.touch(exist_ok=True)
+            _ = py_typed_path.touch(exist_ok=True)
             logger.debug(f"创建 py.typed 文件成功: {py_typed_path}")
         except Exception as e:
             logger.error(f"创建 __init__.py/py.typed 文件失败: {e}")
@@ -113,7 +168,7 @@ class AivkIO:
             import platform
             
             current_time = datetime.datetime.now().isoformat()
-            aivk_info = {
+            aivk_info: AivkInfo = {
                 "metadata": {
                     "aivk": __github__,
                     "version": __version__,  
@@ -132,10 +187,8 @@ class AivkIO:
                 # 添加模块部分，用于记录已注册模块
                 "modules": {}
             }
-            
-            # 以文本模式写入确保换行符处理正确
-            with open(dotaivk, 'w', encoding='utf-8') as f:
-                toml.dump(aivk_info, f)
+            _ = toml_dump(aivk_info, open(dotaivk, 'w', encoding='utf-8'))
+            logger.debug(f"创建 .aivk 文件内容: {aivk_info}")
             logger.info(f".aivk 标记文件创建成功: {dotaivk}")
         except Exception as e:
             logger.error(f"创建 .aivk 标记文件失败: {e}")
@@ -152,8 +205,7 @@ class AivkIO:
                 "created_at": current_time,
                 "updated_at": current_time
             }
-            with open(config_path, 'w', encoding='utf-8') as f:
-                toml.dump(config, f)
+            _ = toml.dump(config, open(config_path, 'w', encoding='utf-8'))
             logger.info(f"配置文件创建成功: {config_path}")
         except Exception as e:
             logger.error(f"创建配置文件失败: {e}")
@@ -172,18 +224,21 @@ class AivkIO:
                 "updated_at": current_time,
                 "init_force": force
             }
-            with open(meta_path, 'w', encoding='utf-8') as f:
-                toml.dump(meta, f)
             logger.info(f"元数据文件创建成功: {meta_path}")
         except Exception as e:
             logger.error(f"创建元数据文件失败: {e}")
             raise RuntimeError(f"创建元数据文件失败: {e}")
         
+        with open(meta_path, 'w', encoding='utf-8') as f:
+            _ = toml_dump(meta, f)
+
         pyproject_path = root_path / "pyproject.toml"
 
-        toml.dump(__root__, open(pyproject_path, 'w', encoding='utf-8'))
+        with open(pyproject_path, 'w', encoding='utf-8') as f:
+            _ = toml_dump(__root__, f)
+
         logger.info(f"pyproject.toml 文件创建成功: {pyproject_path}")
-        await AivkExecuter.aexec(cmd="uv sync", shell=True, cwd=root_path)
+        _ = await AivkExecuter.aexec(cmd="uv sync", shell=True, cwd=root_path)
 
         logger.info(f"AIVK 根目录初始化完成: {root_path}")
         return root_path
@@ -237,12 +292,11 @@ class AivkIO:
             dotaivk_content["updated_at"] = datetime.now().isoformat()
             
             # 将修改保存回文件
-            with open(dotaivk, 'w', encoding='utf-8') as f:
-                toml.dump(dotaivk_content, f)
+            _ = toml.dump(dotaivk_content, open(dotaivk, 'w', encoding='utf-8'))
             logger.debug("已更新 .aivk 文件的访问时间")
             
             # 检查基本目录结构是否完整
-            basic_dirs = ["etc", "etc/aivk", "cache", "data", "tmp", "home"]
+            basic_dirs: list[str] = ["etc", "etc/aivk", "cache", "data", "tmp", "home"]
             missing_dirs = []
             for dir_name in basic_dirs:
                 dir_path = cls.AIVK_ROOT / dir_name
@@ -277,7 +331,7 @@ class AivkIO:
         except FileNotFoundError as e:
             logger.error(f"挂载失败: 文件不存在: {e}")
             raise FileNotFoundError(f"挂载失败: {e}")
-        except toml.TomlDecodeError as e:
+        except TomlDecodeError as e:
             logger.error(f"挂载失败: .aivk 文件格式错误: {e}")
             raise ValueError(f"AIVK根目录损坏，.aivk 文件格式错误: {e}")
         except Exception as e:
@@ -296,7 +350,7 @@ class AivkIO:
         config_path = AivkFS.config_file(id, exist=True)
         
         try:
-            config = toml.load(config_path)
+            config = toml_load(config_path)
             return config
         except Exception as e:
             # 记录错误信息
@@ -319,12 +373,11 @@ class AivkIO:
             # 确保目录存在
             config_path.parent.mkdir(parents=True, exist_ok=True)
             
-            with open(config_path, "w") as f:
-                toml.dump(config, f)
+            _ = toml_dump(config, open(config_path, "w", encoding="utf-8"))
 
             aivk_meta: dict[str, Any] = cls.get_meta("aivk")  # 添加类型注解
             aivk_meta["updated_at"] = datetime.now().isoformat()
-            cls.save_meta("aivk", aivk_meta)
+            _ = cls.save_meta("aivk", aivk_meta)
 
             return True
         except Exception as e:
@@ -345,7 +398,7 @@ class AivkIO:
         meta_path = AivkFS.meta_file(id, exist=True)
         
         try:
-            meta = toml.load(meta_path)
+            meta = toml_load(meta_path)
             return meta
         except Exception as e:
             # 记录错误信息
@@ -368,8 +421,7 @@ class AivkIO:
             # 确保目录存在
             meta_path.parent.mkdir(parents=True, exist_ok=True)
             
-            with open(meta_path, "w") as f:
-                toml.dump(meta, f)
+            _ = toml_dump(meta, open(meta_path, "w", encoding="utf-8"))
             return True
         except Exception as e:
             # 记录错误信息
@@ -379,7 +431,7 @@ class AivkIO:
             return False
 
     @classmethod
-    def add_module_id(cls, module_id: str, **kwargs: dict[str, Any]) -> bool:
+    def add_module_id(cls, module_id: str, **kwargs: str | int | float | bool) -> bool:
         """将模块 ID 添加到 .aivk 标记文件的 [modules] 部分
         
         :param module_id: 模块 ID
@@ -397,68 +449,66 @@ class AivkIO:
                 return False
                 
             # 读取现有内容
-            dotaivk_dict = toml.load(dotaivk_file)
+            dotaivk_dict = toml_load(dotaivk_file)
             
             # 确保 modules 部分存在
             if "modules" not in dotaivk_dict:
                 dotaivk_dict["modules"] = {}
                 
             # 添加模块 ID 及其信息
-            module_info = {
+            module_info: dict[str, str | int | float | bool] = {
                 "added_at": datetime.now().isoformat()
             }
             
-            # 添加额外信息
-            module_info.update(kwargs)
+            # 添加额外信息 - 手动添加键值对而不是使用 update 方法
+            for key, value in kwargs.items():
+                module_info[key] = value
             
             # 如果模块已存在，更新信息而不是完全覆盖
-            if module_id in dotaivk_dict["modules"]:
+            if "modules" in dotaivk_dict and module_id in dotaivk_dict["modules"]:
                 existing_info = dotaivk_dict["modules"][module_id]
                 # 保留原始添加时间
                 if "added_at" in existing_info:
                     module_info["added_at"] = existing_info["added_at"]
-                # 合并其他信息
-                dotaivk_dict["modules"][module_id].update(module_info.items())  # type: ignore[arg-type]
+                # 合并其他信息 - 与原代码保持一致的行为
+                dotaivk_dict["modules"][module_id] = module_info
             else:
                 # 新模块直接添加
-                dotaivk_dict["modules"][module_id] = module_info
+                if "modules" in dotaivk_dict:
+                    dotaivk_dict["modules"][module_id] = module_info
             
             # 更新 updated_at 字段
             dotaivk_dict["updated_at"] = datetime.now().isoformat()
             
-            # 保存回文件
-            with open(dotaivk_file, "w") as f:
-                toml.dump(dotaivk_dict, f)
+            # 保存回文件 - 使用 with 语句确保文件正确关闭
+            with open(dotaivk_file, "w", encoding="utf-8") as f:
+                _ = toml_dump(dotaivk_dict, f)
                 
             return True
-        except Exception as e:
-            # 记录错误信息
-            import logging
-            logger = logging.getLogger("aivk.io")
-            logger.error(f"添加模块 ID 失败: {e}")
+        except Exception :
             return False
     
     @classmethod
-    def get_module_ids(cls) -> dict[str, dict[str, Any]]:  # type: ignore[type-arg, no-any-return]
+    def get_module_ids(cls) -> list[str]: 
         """从 .aivk 标记文件读取所有模块 ID
         
-        :return: 模块 ID 字典，如果加载失败则返回空字典
+        :return: 模块 ID 列表，如果加载失败则返回空列表
         """
         try:
             # 获取 .aivk 文件路径
             dotaivk_file = AivkFS.file(".aivk", exist=False)
             if not dotaivk_file.exists():
-                # 如果文件不存在，返回空字典
-                return {}
+                # 如果文件不存在，返回空列表
+                return []
                 
             # 读取文件内容
-            dotaivk_dict = toml.load(dotaivk_file)
+            dotaivk_dict = toml_load(dotaivk_file)
             
-            # 返回 modules 部分，如果不存在则返回空字典
-            return dotaivk_dict.get("modules", {})
-        except Exception as e:
-            # 记录错误信息
-            import logging
-            logger = logging.getLogger("aivk.io")
-            logger.error(f"读取模块 ID 失败: {e}")
-            return {}
+            # 返回 modules 部分的所有模块 ID
+            if isinstance(dotaivk_dict, dict) and "modules" in dotaivk_dict:
+                modules = dotaivk_dict["modules"]
+                if isinstance(modules, dict):
+                    return list(modules.keys())
+            return []
+        except Exception:
+            return []

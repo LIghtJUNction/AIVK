@@ -186,7 +186,7 @@ def interactive_shell():
             else:
                 # 尝试系统命令
                 if cmd.startswith("!"):
-                    os.system(user_input[1:])
+                    _ = os.system(user_input[1:])
                 else:
                     print(f"Unknown command: {cmd}")
                     print("Type 'help' for a list of available commands")
@@ -204,7 +204,7 @@ def interactive_shell():
 
 
 # 交互式命令实现
-def cmd_help(args: str, path: Path) -> bool:
+def cmd_help() -> bool:
     """显示帮助信息"""
     print("Available commands:")
     for name, help_text in sorted(HELP_TEXT.items()):
@@ -248,8 +248,7 @@ def cmd_status(_args: str, path: Path) -> bool:
             with open(dotaivk_file) as f:
                 config = toml.load(f)
             
-            # 使用类型注解解决 Any 类型警告
-            metadata: dict[str, str] = config.get('metadata', {})
+            metadata: dict[str, str] = config["metadata"] # type: ignore
             print(f"  Created: {metadata.get('created', 'Unknown')}")
             print(f"  Updated: {metadata.get('updated', 'Unknown')}")
             if 'accessed' in metadata:
@@ -445,7 +444,7 @@ def mcp(transport: Literal["stdio", "sse"], host: str | None, port: int | None, 
     if not AivkIO.is_aivk_root():
         logger.warning(f"AIVK 根目录 {root_path} 未初始化。尝试挂载...")
         try:
-            asyncio.run(AivkIO.fs_mount())
+            _ = asyncio.run(AivkIO.fs_mount())
         except Exception as e:
             logger.error(f"挂载 AIVK 根目录失败: {e}")
             sys.exit(1)
