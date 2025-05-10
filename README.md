@@ -19,7 +19,7 @@ AIVK 是一个面向 AI 的虚拟内核（AI Virtual Kernel），支持模块化
 - 类型检查支持（py.typed）
 
 ## 安装
-基于πthon ，推荐使用 uv
+基于~~πthon~~ ，推荐使用 uv
 
 
 
@@ -130,4 +130,4 @@ AIVK/
 
 ---
 
-> © 2025 LIghtJUNction. Powered by AIVK.
+> © 2025 LIghtJUNction. Powered by AIVK team.
