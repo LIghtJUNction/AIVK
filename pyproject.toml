@@ -1,6 +1,6 @@
 [project]
 name = "aivk"
-version = "0.3.3.5"
+version = "0.4.1"
 description = "Aivk is ai Virtual Kernel"
 readme = "README.md"
 authors = [
@@ -40,3 +40,13 @@ directory = "dist"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/aivk"]
+
+[tool.uv.workspace]
+members = [
+    "AIVKTEST",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4.1",
+]

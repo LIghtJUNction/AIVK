@@ -1,9 +1,7 @@
 # aivk - module
-
-
 __id__ : str = "aivk"
 __name__ : str = "AIVK"
-__version__ : str = "0.3.3.5"
+__version__ : str = "0.4.1"
 
 __author__ : str = "LIghtJUNction"
 __license__ : str = "MIT"
@@ -13,29 +11,6 @@ __description__ : str = "AIVK - AI Virtual Kernel"
 __copyright__ : str = "Copyright (c) 2025 LIghtJUNction"
 __email__ : str = "lightjunction.me@gmail.com"
 __github__ : str = "https://github.com/LIghtJUNction/AIVK"
-
-# PyProject.toml 配置
-__root__ : dict[str , dict[str, str | list[str] | list[dict[str, str]]] ] = {
-    "project": {
-        "name": "aivk_agent",
-        "version": __version__,
-        "description": "This a aivk module / mcp serve / uv project / build by AI Agent.",
-        "authors": [
-            {"name": __author__, "email": __email__}
-        ],
-        "requires-python": ">=3.13",
-        "dependencies": [
-        ]
-    },
-    "build-system": {
-        "requires": ["hatchling"],
-        "build-backend": "hatchling.build"
-    },
-    "tool.hatch.build.targets.wheel": {
-        "packages": ["src/aivk_agent"]
-    }
-}
-
 
 # ASCII艺术字和其他常量定义
 __LOGO__ = """
@@ -59,7 +34,9 @@ Copyright: {__copyright__}
 
 github: {__github__}
 
-""".format(__version__=__version__, __author__=__author__, __description__=__description__, __license__=__license__, __copyright__=__copyright__, __github__=__github__)
+""".format(__version__=__version__, __author__=__author__, 
+           __description__=__description__, __license__=__license__, 
+           __copyright__=__copyright__, __github__=__github__)
 
 
 __WELCOME__ = """
@@ -80,7 +57,8 @@ Version: {__version__}
 License: {__license__}          
 Copyright: {__copyright__}         
                          
-github: {__github__}            | Thank for using AIVK !    Open source project.                                                                                                                              
+github: {__github__}          
+Thank for using AIVK !                                                                                                                                  
 """.format(__version__=__version__, __author__=__author__, __description__=__description__, __license__=__license__, __copyright__=__copyright__, __github__=__github__, __email__=__email__)
 
 

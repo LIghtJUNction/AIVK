@@ -1,95 +1,131 @@
 """
-文件系统操作模块，包含 AIVK 文件系统初始化、挂载等功能
-
-2025-0419 零警告
-
+基础
 """
 import os
 import logging
 from pathlib import Path
+from typing import Self
 
+logger = logging.getLogger("aivk.base.fs")
 
-try:
-    from ..__about__ import __version__, __github__
-    
-except ImportError:
-    pass
-        
-
-logger = logging.getLogger("aivk.fs")
-
-class AivkFS:
+class AivkFsMeta(type):
     """
-    AIVK 文件系统操作类
+    AIVK 文件系统元类
     
-    提供初始化、挂载 AIVK 根目录等文件系统操作
+    用于注册 AIVK 文件系统操作类
     """
-    # 定义为普通类变量，而不是 pydantic 模型字段
-    AIVK_ROOT: Path = Path(os.getenv("AIVK_ROOT", str(Path().home() / ".aivk")))
     
-    @classmethod
-    async def mount(cls) -> Path:
-        """挂载AIVK文件系统"""
-        # 确保根目录存在
-        cls.AIVK_ROOT.mkdir(parents=True, exist_ok=True)
-        return cls.AIVK_ROOT
+    @property
+    def aivk_root(cls) -> Path:
+        """获取 AIVK 根目录"""
+        return Path(os.getenv("AIVK_ROOT", str(Path().home() / ".aivk")))
+
+    @property
+    def aivk_data(cls) -> Path:
+        """获取 AIVK 数据目录"""
+        return cls.aivk_root / "data"
+    
+    @property
+    def aivk_cache(cls) -> Path:
+        """获取 AIVK 缓存目录"""
+        return cls.aivk_root / "cache"
+    
+    @property
+    def aivk_tmp(cls) -> Path:
+        """获取 AIVK 临时目录"""
+        return cls.aivk_root / "tmp"
+
+    @property
+    def aivk_etc(cls) -> Path:
+        """获取 AIVK 配置目录"""
+        return cls.aivk_root / "etc"
+
+    @property
+    def aivk_meta(cls) -> Path:
+        """获取 AIVK 元数据目录"""
+        return cls.aivk_etc / "meta.toml"
+
+class AivkFS(metaclass=AivkFsMeta):
+    _instances: dict[str, Self] = {}
 
     @classmethod
-    def dir(cls, dir: str, exist: bool) -> Path:
+    def ensure_fs(cls) -> None:
+        """确保 AIVK 文件系统目录存在"""
+        cls.aivk_root.mkdir(parents=True, exist_ok=True)
+        cls.aivk_meta.parent.mkdir(parents=True, exist_ok=True)
+        logger.info(f"AIVK 文件系统已初始化: {cls.aivk_root}")
+
+    def __init__(self, id: str = "aivk") -> None:
         """
-        获取指定目录路径
+        初始化 AIVK 文件系统
         
-        :return: 指定目录路径
+        请使用 AivkFS.getFS() 获取实例，不要直接实例化！
+        
+        :param id: AIVK ID
+        :raises RuntimeError: 当直接实例化时抛出异常
         """
-        path = cls.AIVK_ROOT / dir
 
-        if not path.exists() and exist:
-            # 创建目录
-            path.mkdir(parents=True, exist_ok=exist)
-        return path
+        self.id = id
+        if id == "aivk":
+            # on system boot
+            self.ensure_fs()
+        logger.info(f"AIVK 模块加载: {self.id}")
 
     @classmethod
-    def file(cls, file: str, exist: bool = True) -> Path:
+    def getFS(cls, id: str = "aivk") -> Self:
         """
-        获取指定文件路径
+        获取 AIVK 文件系统实例
         
-        :param file: 文件路径
-        :param exist: 是否确保文件存在，默认为 True
-        :return: 指定文件路径
+        :param id: AIVK ID
+        :return: AIVK 文件系统实例
         """
-        path = cls.AIVK_ROOT / file
+        if id not in cls._instances:
+            cls._instances[id] = cls(id)
+        return cls._instances[id]
+    
+    @property
+    def home(self) -> Path:
+        """获取 AIVK 模块主目录"""
+        return self.__class__.aivk_root / "home" / self.id if self.id != "aivk" else self.__class__.aivk_root
+    
+    @property
+    def data(self) -> Path:
+        """获取 AIVK 模块数据目录"""
+        return self.home / "data"
+    
+    @property
+    def cache(self) -> Path:
+        """获取 AIVK 模块缓存目录"""
+        return self.home / "cache"
+    
+    @property
+    def tmp(self) -> Path:
+        """获取 AIVK 模块临时目录"""
+        return self.home / "tmp"
+    
+    @property
+    def etc(self) -> Path:
+        """获取 AIVK 模块配置目录"""
+        return self.home / "etc"
 
-        if not path.exists() and exist:
-            # 确保父目录存在
-            parent_dir = path.parent
-            parent_dir.mkdir(parents=True, exist_ok=True)
-            # 创建文件
-            path.touch(exist_ok=True)
-        return path
-
-    @classmethod
-    def meta_file(cls, id: str, exist: bool = True) -> Path:
+    def __getattr__(self, item: str):
         """
-        获取指定 ID 的元文件路径
-        
-        :param id: 文件 ID
-        :param exist: 是否允许文件已存在，默认为 True
-        :return: 指定 ID 的元文件路径
+        当访问不存在的属性时报错
         """
-        path = cls.file(f"etc/{id}/meta.toml", exist)
-
-        return path
+        available_paths = [name for name in dir(self) if not name.startswith('_') and isinstance(getattr(self.__class__, name, None), property)]
+        raise AttributeError(f"{self.__class__.__name__} 禁止访问 '{item}'。可用路径：{available_paths}")
     
 
-    @classmethod
-    def config_file(cls, id: str, exist: bool = True) -> Path:
+    def __dir__(self) -> list[str]:
         """
-        获取指定 ID 的配置文件路径
-        
-        :param id: 文件 ID
-        :param exist: 是否允许文件已存在，默认为 True
-        :return: 指定 ID 的配置文件路径
+        返回 AIVK 文件系统可用路径列表
         """
-        path = cls.file(f"etc/{id}/config.toml", exist)
+        return list(self.__class__.__dict__.keys())
+    
+    def __repr__(self) -> str:
+        """
+        返回 AIVK 文件系统实例的字符串表示
+        """
+        return f"<AivkFS id={self.id} >"
+    
 
-        return path
