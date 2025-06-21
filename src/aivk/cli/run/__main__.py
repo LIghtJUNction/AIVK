@@ -1,46 +1,44 @@
 # -*- coding: utf-8 -*-
-from logging import getLogger , basicConfig , DEBUG , INFO, WARNING, ERROR
-from aivk.api import AivkContext
-from click import command, option
+import asyncio
+from logging import getLogger
+from aivk.api import AivkContext, AivkFS , AivkLoader , AivkMod
+from click import command
 
-
-logger = getLogger("aivk.cli.run")
-
-
+logger = getLogger("aivk.run")
 @command()
-@option("-v", "--verbose", count=True,default = 2, help="详细程度，可以多次使用 (-v, -vv, -vvv)")
-def run( verbose: int):
+def run():
     """
     AIVK 运行命令
     :param style: 运行方式，支持 "cli" 或 "web"
     启动 AIVK CLI
-    """    # 更合理的日志级别设置
-    if verbose == 3:
-        # -vvv: 显示所有日志（DEBUG 及以上）
-        basicConfig(level=DEBUG)
-        logger.info(f"日志级别设置为 DEBUG (verbose={verbose}) - 显示所有调试信息")
-    elif verbose == 2:
-        # -vv: 显示详细信息（INFO 及以上）
-        basicConfig(level=INFO)
-        logger.info(f"日志级别设置为 INFO (verbose={verbose}) - 显示详细信息")
-    elif verbose == 1:
-        # -v: 显示重要信息（INFO 及以上，但减少部分详细输出）
-        basicConfig(level=WARNING)
-        logger.info(f"日志级别设置为 WARNING (verbose={verbose}) - 显示重要信息")
-    else:
-        basicConfig(level=ERROR)
-        logger.info(f"日志级别设置为 ERROR (verbose={verbose}) - 只显示错误信息")
-        # 不输出日志级别信息，保持简洁
+    """
+    async def run():
+        try:
+            logger.info("开始加载 AIVK 模块...")
+            ctx = AivkContext.getContext()
+            logger.debug("AivkContext 获取完成: %s", ctx)
+            async with ctx.env("aivk", create_venv=True) as fs:
+                logger.debug("已进入 ctx.env 上下文, fs=%s", fs)
+                loader = AivkLoader.getLoader()
+                logger.debug("AivkLoader 获取完成: %s", loader)
+                aivk_modules = await loader.ls(fs)  # 获取所有 AIVK 模块列表
+                logger.debug("模块列表: %s", aivk_modules)
+                await loader.load(fs, "aivk", aivk_modules)  # 加载 AIVK 模块
+                logger.debug("AIVK 模块加载完成")
+                # 加载其他组件 -- 如果未禁用
+                await loader.load(fs, "*", aivk_modules)  # 加载其他所有组件
+                logger.debug("所有组件加载完成")
+                AivkLoader.aivk_box.to_toml(AivkFS.aivk_cache / "aivk_box.toml")  # type: ignore
+                logger.debug("aivk_box 已保存")
+                # 开始执行
+                await AivkMod.exec("aivk", "onLoad")  # 执行 AIVK 的 onLoad 钩子
+                logger.debug("AIVK onLoad 执行完成")
+                await AivkMod.exec("web", "onLoad")  # 执行 Web 的 onLoad 钩子
+                logger.debug("Web onLoad 执行完成")
 
-    try:
-        # 加载aivk_module
-        logger.info("开始加载 AIVK 模块...")
-        ctx = AivkContext.getContext()
-        ctx.load_aivk_modules(verbose_level=verbose)
+        except Exception as e:
+            logger.error(f"运行 AIVK 时发生错误: {e}")
+            import traceback
+            logger.error(traceback.format_exc(limit=20))
 
-        logger.info("AIVK 模块加载完成")
-                
-    except Exception as e:
-        logger.error(f"运行 AIVK 时发生错误: {e}")
-        import traceback
-        logger.error(traceback.format_exc())
+    asyncio.run(run())

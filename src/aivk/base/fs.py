@@ -1,10 +1,11 @@
 """
 基础
 """
+import asyncio
 import os
 import logging
 from pathlib import Path
-from typing import Self
+from typing import Self , Callable
 
 logger = logging.getLogger("aivk.base.fs")
 
@@ -107,6 +108,44 @@ class AivkFS(metaclass=AivkFsMeta):
     def etc(self) -> Path:
         """获取 AIVK 模块配置目录"""
         return self.home / "etc"
+    
+    async def aexec(self, command: str, *args: str) -> tuple[bytes, bytes]:
+        """
+        执行 AIVK 模块的命令
+
+        :param command: 命令名称
+        args: 命令参数
+        :return: (stdout, stderr) 原始字符串
+        """
+        logger.debug(f"执行 AIVK 模块命令: {command} {args}")
+        proc = await asyncio.create_subprocess_exec(
+            command,
+            *args,
+            cwd=self.home,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
+        )
+        assert proc.stdout is not None
+        assert proc.stderr is not None
+
+        stdout_chunks: list[bytes] = []
+        stderr_chunks: list[bytes] = []
+
+        async def read_stream(stream: asyncio.StreamReader, chunks: list[bytes], log_func: Callable[[str], None]) -> None:
+            async for chunk in stream:
+                stdout = chunk.decode()
+                log_func(stdout.rstrip())
+                chunks.append(chunk)
+
+        await asyncio.gather(
+            read_stream(proc.stdout, stdout_chunks, logger.debug),
+            read_stream(proc.stderr, stderr_chunks, logger.error)
+        )
+
+        await proc.wait()
+        logger.debug(f"执行 AIVK 模块命令完成: {command} {args}")
+        return b"".join(stdout_chunks), b"".join(stderr_chunks)
+
 
     def __getattr__(self, item: str):
         """
@@ -127,5 +166,3 @@ class AivkFS(metaclass=AivkFsMeta):
         返回 AIVK 文件系统实例的字符串表示
         """
         return f"<AivkFS id={self.id} >"
-    
-

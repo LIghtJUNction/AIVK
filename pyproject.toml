@@ -1,6 +1,6 @@
 [project]
 name = "aivk"
-version = "0.4.1"
+version = "0.4.3-alpha.1"
 description = "Aivk is ai Virtual Kernel"
 readme = "README.md"
 authors = [
@@ -8,16 +8,18 @@ authors = [
 ]
 requires-python = ">=3.13"
 dependencies = [
+    "colorlog>=6.9.0",
     "fastapi>=0.115.12",
     "httpx>=0.28.1",
     "mcp[cli]>=1.6.0",
+    "python-box>=7.3.2",
     "python-dotenv>=1.1.0",
     "requests>=2.32.3",
     "toml>=0.10.2",
 ]
 
 [project.scripts]
-aivk = "aivk.cli.__main__:cli"
+aivk = "aivk.cli:cli"
 
 [project.optional-dependencies]
 dev = [
@@ -49,4 +51,5 @@ members = [
 [dependency-groups]
 dev = [
     "pytest>=8.4.1",
+    "pytest-asyncio>=1.0.0",
 ]

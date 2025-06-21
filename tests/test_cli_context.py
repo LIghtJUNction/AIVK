@@ -87,20 +87,20 @@ def test_unload_aivk_modules_idempotent(context, fake_packages):
     context.unload_single_module.assert_not_called()
 
 def test_atexit_hook(context, fake_packages):
-    # 验证 atexit 钩子不会递归
+    # 验证 atexit 钩子不会递归，但 allow_atexit=True 时每次都应执行一次
     context.list_packages = lambda env_id=None: fake_packages
     context.get_aivk_modules = lambda pkgs, show_all_packages=False: [
         {"name": "aivk_foo"}
     ]
     context.unload_single_module = mock.Mock(return_value=True)
     context._unloaded = False
-    # allow_atexit=True 时每次都应执行一次
+    # 第一次调用
     context.unload_aivk_modules(verbose_level=1, allow_atexit=True)
     assert context._unloaded
     context.unload_single_module.assert_called_once_with("aivk_foo", "aivk", 1, in_env=True)
-    # 再次调用会再卸载一次
+    # 再次调用前重置 mock 和 _unloaded，模拟 atexit 场景
     context.unload_single_module.reset_mock()
-    context._unloaded = False  # 模拟 atexit 场景
+    context._unloaded = False
     context.unload_aivk_modules(verbose_level=1, allow_atexit=True)
     context.unload_single_module.assert_called_once_with("aivk_foo", "aivk", 1, in_env=True)
 

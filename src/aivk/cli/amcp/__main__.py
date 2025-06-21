@@ -4,7 +4,7 @@ from mcp.server.fastmcp import FastMCP
 from aivk.base.fs import AivkFS
 from click import command, option
 from logging import getLogger
-logger = getLogger("aivk.cli.amcp")
+logger = getLogger("aivk.amcp")
 
 class AivkMCPMeta(type):
     """
@@ -65,7 +65,7 @@ class AivkMCP(FastMCP,metaclass=AivkMCPMeta):
         cls._instance.settings.port = port
         asyncio.run(cls._instance.run_sse_async())
 
-
+# MCP DEV 入口
 def __getattr__(name: str) -> AivkMCP | None:
     """
     获取 AIVK MCP 实例
@@ -91,6 +91,7 @@ def aivk_mcp(host: str, port: int, transport: Literal["stdio", "sse"]):
     """
     启动 AIVK MCP
     """
+    logger.info(f"启动 AIVK MCP 服务，模式: {transport}, 地址: {host}:{port}")
     if transport == "stdio":
         AivkMCP.stdio()
     elif transport == "sse":
