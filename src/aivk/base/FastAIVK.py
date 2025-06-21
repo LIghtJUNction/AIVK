@@ -15,7 +15,7 @@ T = TypeVar('T')
 class FastAIVK:
 
     @classmethod
-    def aivk_context(
+    def ctx(
         cls, 
         id: str = "aivk", 
         create_venv: bool = True, 
@@ -37,7 +37,7 @@ class FastAIVK:
         return decorator
 
     @classmethod
-    def aivk_metadata(cls, target_class: type[T]) -> AivkMod:
+    def meta(cls, target_class: type[T]) -> AivkMod:
         # 获取类的所有属性
         class_attrs: dict[str, Any] = {}
         for attr_name in dir(target_class):

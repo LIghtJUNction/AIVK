@@ -5,7 +5,7 @@ import asyncio
 import os
 import logging
 from pathlib import Path
-from typing import Self , Callable
+from typing import Any, Self , Callable
 
 logger = logging.getLogger("aivk.base.fs")
 
@@ -48,7 +48,7 @@ class AivkFsMeta(type):
 
 class AivkFS(metaclass=AivkFsMeta):
     _instances: dict[str, Self] = {}
-
+    env : dict[str,Any] # os.env
     @classmethod
     def ensure_fs(cls) -> None:
         """确保 AIVK 文件系统目录存在"""

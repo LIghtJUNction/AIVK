@@ -7,7 +7,7 @@ logger = getLogger("aivk")
 
 #region aivk
 
-@FastAIVK.aivk_metadata
+@FastAIVK.meta
 class AIVK():
     """
     AIVK 元模块

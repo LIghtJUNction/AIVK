@@ -182,7 +182,7 @@ class AivkContext:
             # 3. 创建或激活虚拟环境
             if create_venv:
                 venv_path.parent.mkdir(parents=True, exist_ok=True)
-                if await self._create_venv(venv_path):
+                if await self._create_venv(venv_path,"3.13"):
                     await self._activate_venv(venv_path, id)
                     venv_activated = True
             else:
@@ -200,6 +200,7 @@ class AivkContext:
                 logger.debug(f"当前工作目录已更改为: {fs.home}")
                 if venv_activated:
                     logger.debug(f"虚拟环境已激活: {venv_path}")
+                fs.env = dict(os.environ)
                 yield fs
             finally:
                 # 5. 恢复环境
