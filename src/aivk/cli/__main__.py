@@ -1,28 +1,74 @@
-from click import group , option, pass_context , Context
-from aivk.cli.amcp import aivk_mcp
-from aivk.cli.run import run
-from aivk.cli.shell import shell
-from aivk.api.setlogger import set_logger_level_from_ctx, set_logger_style
-from logging import getLogger
-from aivk.base.aivk import AivkMod
-debug = AivkMod.getMod("aivk")
+# -*- coding: utf-8 -*-
+from click import Context, group, option, pass_context
+from logging import Logger, getLogger
+
+from colorlog import ColoredFormatter 
+from .run import run
 
 logger = getLogger("aivk")
-@group() 
-@option("-v", "--verbose", count=True, default=2, help="详细程度，可以多次使用 (-v, -vv, -vvv)")
+
+def setup_aivk_logger(logger: Logger, level: int):
+    """
+    基础日志设置
+    """
+    fmt = (
+        "%(asctime_log_color)s%(asctime)s "
+        "%(levelname_log_color)s%(levelname)s "
+        "%(name_log_color)s%(name)s "
+        "%(log_color)s%(message)s"
+    )
+    colors = {
+        'DEBUG':    'cyan',
+        'INFO':     'green',
+        'WARNING':  'yellow',
+        'ERROR':    'red',
+        'CRITICAL': 'bold_red',
+    }
+    secondary_colors = {
+        'asctime': {
+            'DEBUG':    'blue',
+            'INFO':     'white',
+            'WARNING':  'white',
+            'ERROR':    'red',
+            'CRITICAL': 'bold_white',
+        },
+        'levelname': {
+            'DEBUG':    'cyan',
+            'INFO':     'green',
+            'WARNING':  'yellow',
+            'ERROR':    'red',
+            'CRITICAL': 'bold_red',
+        },
+        'name': {
+            'DEBUG':    'blue',
+            'INFO':     'white',
+            'WARNING':  'white',
+            'ERROR':    'red',
+            'CRITICAL': 'white',
+        }
+    }
+    formatter = ColoredFormatter(fmt, log_colors=colors, secondary_log_colors=secondary_colors)
+    handler = logger.handlers[0] if logger.handlers else None
+    if handler:
+        handler.setFormatter(formatter)
+    else:
+        import sys
+        from logging import StreamHandler
+        handler = StreamHandler(sys.stdout)
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+    logger.setLevel(level)
+
+@group()
+@option('--verbose', "-v", count=True, default=4, help='aivk 日志级别，1-5，默认为4:INFO (CRITICAL=1, ERROR=2, WARNING=3, INFO=4, DEBUG=5)')
 @pass_context
-def cli(ctx: Context, verbose: int):
+def cli(ctx: Context, verbose: int) -> None:
     """
-    AIVK CLI
+    Aivk CLI
     """
-    verbose = min(verbose, 3)  # 限制 verbose 最大值为 3
+    setup_aivk_logger(logger, verbose)
+    logger.debug(f"Aivk CLI 启动，日志级别: {logger.getEffectiveLevel()}")
     ctx.ensure_object(dict)
     ctx.obj['verbose'] = verbose
-    set_logger_level_from_ctx(ctx, logger)
-    set_logger_style(logger, "fancy")  # 设置日志样式为 fancy
 
-cli.add_command(aivk_mcp)
 cli.add_command(run)
-cli.add_command(shell)
-
-cli.add_command(debug, name="debug")

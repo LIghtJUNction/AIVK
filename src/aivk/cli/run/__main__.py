@@ -1,44 +1,28 @@
-# -*- coding: utf-8 -*-
 import asyncio
-from logging import getLogger
-from aivk.api import AivkContext, AivkFS , AivkLoader , AivkMod
 from click import command
-
+from ...api import AivkFS
+from aivk.loader import AivkModLoader
+from logging import getLogger
 logger = getLogger("aivk.run")
+
 @command()
-def run():
+def run() -> None:
     """
-    AIVK 运行命令
-    :param style: 运行方式，支持 "cli" 或 "web"
-    启动 AIVK CLI
+    启动Aivk
     """
-    async def run():
-        try:
-            logger.info("开始加载 AIVK 模块...")
-            ctx = AivkContext.getContext()
-            logger.debug("AivkContext 获取完成: %s", ctx)
-            async with ctx.env("aivk", create_venv=True) as fs:
-                logger.debug("已进入 ctx.env 上下文, fs=%s", fs)
-                loader = AivkLoader.getLoader()
-                logger.debug("AivkLoader 获取完成: %s", loader)
-                aivk_modules = await loader.ls(fs)  # 获取所有 AIVK 模块列表
-                logger.debug("模块列表: %s", aivk_modules)
-                await loader.load(fs, "aivk", aivk_modules)  # 加载 AIVK 模块
-                logger.debug("AIVK 模块加载完成")
-                # 加载其他组件 -- 如果未禁用
-                await loader.load(fs, "*", aivk_modules)  # 加载其他所有组件
-                logger.debug("所有组件加载完成")
-                AivkLoader.aivk_box.to_toml(AivkFS.aivk_cache / "aivk_box.toml")  # type: ignore
-                logger.debug("aivk_box 已保存")
-                # 开始执行
-                await AivkMod.exec("aivk", "onLoad")  # 执行 AIVK 的 onLoad 钩子
-                logger.debug("AIVK onLoad 执行完成")
-                await AivkMod.exec("web", "onLoad")  # 执行 Web 的 onLoad 钩子
-                logger.debug("Web onLoad 执行完成")
+    logger.info("初始化启动器...")
+    loader = AivkModLoader()
+    loader.aivk_pm.register(loader) # 自注册
+    logger.debug("AivkModLoader 已注册到 AivkPM")
 
-        except Exception as e:
-            logger.error(f"运行 AIVK 时发生错误: {e}")
-            import traceback
-            logger.error(traceback.format_exc(limit=20))
+    async def main() -> None:
+        logger.info("正在进入aivk 虚拟环境...")
+        async with AivkFS.ctx() as fs:
+            logger.info("Aivk 虚拟环境已进入")
+            logger.info("尝试启动模块加载器...")
+            logger.debug(fs.home)
+            await asyncio.gather(*loader.aivk_pm.hook.onLoad(fs=fs))
+        logger.info("已退出 Aivk 虚拟环境")
+        await asyncio.gather(*reversed(loader.aivk_pm.hook.onUnload(fs=fs)))
 
-    asyncio.run(run())
+    asyncio.run(main())

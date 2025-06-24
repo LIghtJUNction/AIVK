@@ -1,3 +1,25 @@
 {
-    "deepscan.enable": true
+    "deepscan.enable": true,
+    "cSpell.words": [
+        "aexec",
+        "Aivk",
+        "aivkd",
+        "asyncio",
+        "colorlog",
+        "coro",
+        "dotenv",
+        "fastapi",
+        "httpx",
+        "levelname",
+        "levelno",
+        "monokai",
+        "onunload",
+        "pname",
+        "prio",
+        "pytest",
+        "pyupgrade",
+        "rtype",
+        "setlogger",
+        "submods"
+    ]
 }

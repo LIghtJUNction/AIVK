@@ -1,6 +1,6 @@
 [project]
 name = "aivk"
-version = "0.4.3-alpha.1"
+version = "0.4.5"
 description = "Aivk is ai Virtual Kernel"
 readme = "README.md"
 authors = [
@@ -8,18 +8,21 @@ authors = [
 ]
 requires-python = ">=3.13"
 dependencies = [
+    "click>=8.2.1",
     "colorlog>=6.9.0",
-    "fastapi>=0.115.12",
-    "httpx>=0.28.1",
     "mcp[cli]>=1.6.0",
+    "pluggy>=1.6.0",
+    "pydantic>=2.11.7",
     "python-box>=7.3.2",
     "python-dotenv>=1.1.0",
-    "requests>=2.32.3",
-    "toml>=0.10.2",
+    "watchdog>=6.0.0",
 ]
 
 [project.scripts]
 aivk = "aivk.cli:cli"
+
+[project.entry-points."aivk.mods"]
+aivkd = "aivk.aivkd:AivkDaemon"
 
 [project.optional-dependencies]
 dev = [
@@ -27,9 +30,6 @@ dev = [
     "pytest-cov>=6.1.1",
     "pytest-mock>=3.14.0",
     "pyupgrade>=3.19.1",
-]
-cli = [
-    "click>=8.1.8",
 ]
 
 [build-system]
@@ -43,13 +43,16 @@ directory = "dist"
 [tool.hatch.build.targets.wheel]
 packages = ["src/aivk"]
 
-[tool.uv.workspace]
-members = [
-    "AIVKTEST",
-]
+[tool.mypy]
+
+plugins = "datafiles.plugins:mypy"
+
 
 [dependency-groups]
 dev = [
     "pytest>=8.4.1",
     "pytest-asyncio>=1.0.0",
 ]
+
+
+

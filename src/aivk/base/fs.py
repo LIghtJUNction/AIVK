@@ -1,168 +1,120 @@
-"""
-基础
-"""
+from __future__ import annotations
 import asyncio
+from contextlib import asynccontextmanager
 import os
-import logging
 from pathlib import Path
-from typing import Any, Self , Callable
+import runpy
+import subprocess
+import sys
+import threading
 
-logger = logging.getLogger("aivk.base.fs")
-
-class AivkFsMeta(type):
-    """
-    AIVK 文件系统元类
-    
-    用于注册 AIVK 文件系统操作类
-    """
-    
+from logging import getLogger
+logger = getLogger("aivk.fs")
+class AivkFSMeta(type):
     @property
-    def aivk_root(cls) -> Path:
-        """获取 AIVK 根目录"""
-        return Path(os.getenv("AIVK_ROOT", str(Path().home() / ".aivk")))
-
-    @property
-    def aivk_data(cls) -> Path:
-        """获取 AIVK 数据目录"""
-        return cls.aivk_root / "data"
-    
-    @property
-    def aivk_cache(cls) -> Path:
-        """获取 AIVK 缓存目录"""
-        return cls.aivk_root / "cache"
-    
-    @property
-    def aivk_tmp(cls) -> Path:
-        """获取 AIVK 临时目录"""
-        return cls.aivk_root / "tmp"
-
-    @property
-    def aivk_etc(cls) -> Path:
-        """获取 AIVK 配置目录"""
-        return cls.aivk_root / "etc"
-
-    @property
-    def aivk_meta(cls) -> Path:
-        """获取 AIVK 元数据目录"""
-        return cls.aivk_etc / "meta.toml"
-
-class AivkFS(metaclass=AivkFsMeta):
-    _instances: dict[str, Self] = {}
-    env : dict[str,Any] # os.env
-    @classmethod
-    def ensure_fs(cls) -> None:
-        """确保 AIVK 文件系统目录存在"""
-        cls.aivk_root.mkdir(parents=True, exist_ok=True)
-        cls.aivk_meta.parent.mkdir(parents=True, exist_ok=True)
-        logger.info(f"AIVK 文件系统已初始化: {cls.aivk_root}")
-
-    def __init__(self, id: str = "aivk") -> None:
+    def env(cls) -> dict[str, str]:
         """
-        初始化 AIVK 文件系统
-        
-        请使用 AivkFS.getFS() 获取实例，不要直接实例化！
-        
-        :param id: AIVK ID
-        :raises RuntimeError: 当直接实例化时抛出异常
+        获取当前环境变量
         """
+        return {k: v for k, v in os.environ.items() if k.startswith("AIVK_")}
 
+class AivkFS(metaclass=AivkFSMeta):
+    root = Path(os.getenv("AIVK_ROOT", Path().home() / ".aivk"))
+    fs: dict[str, AivkFS] = {}
+    _venv_activated = False
+
+    def __init__(self, id: str):
         self.id = id
-        if id == "aivk":
-            # on system boot
-            self.ensure_fs()
-        logger.info(f"AIVK 模块加载: {self.id}")
+        self.fs[id] = self
+
+    def __repr__(self) -> str:
+        info = f"\n\
+home: {self.home}\n\
+data: {self.data}\n\
+etc: {self.etc}\n\
+cache: {self.cache}\n\
+tmp: {self.tmp}\n\
+venv: {self.venv}\n\
+root: {self.root}\n\
+cwd: {Path.cwd()}\n\
+"
+        return f"\nAivkFS({self.id}):\n\
+{info}"
 
     @classmethod
-    def getFS(cls, id: str = "aivk") -> Self:
-        """
-        获取 AIVK 文件系统实例
-        
-        :param id: AIVK ID
-        :return: AIVK 文件系统实例
-        """
-        if id not in cls._instances:
-            cls._instances[id] = cls(id)
-        return cls._instances[id]
-    
+    def getFS(cls, id: str) -> AivkFS:
+        if id not in cls.fs:
+            cls(id)
+        return cls.fs[id]
+
     @property
     def home(self) -> Path:
-        """获取 AIVK 模块主目录"""
-        return self.__class__.aivk_root / "home" / self.id if self.id != "aivk" else self.__class__.aivk_root
+        return self.root  if self.id == "aivk" else self.root / "home" / self.id
     
     @property
     def data(self) -> Path:
-        """获取 AIVK 模块数据目录"""
         return self.home / "data"
-    
-    @property
-    def cache(self) -> Path:
-        """获取 AIVK 模块缓存目录"""
-        return self.home / "cache"
-    
-    @property
-    def tmp(self) -> Path:
-        """获取 AIVK 模块临时目录"""
-        return self.home / "tmp"
-    
+
     @property
     def etc(self) -> Path:
-        """获取 AIVK 模块配置目录"""
         return self.home / "etc"
+
+    @property
+    def cache(self) -> Path:
+        return self.home / "cache"
+
+    @property
+    def tmp(self) -> Path:
+        return self.home / "tmp"
+
+    @property
+    def venv(self) -> Path:
+        return self.home / ".venv"
     
-    async def aexec(self, command: str, *args: str) -> tuple[bytes, bytes]:
+    @classmethod
+    @asynccontextmanager
+    async def ctx(cls, clear: bool = False):
         """
-        执行 AIVK 模块的命令
-
-        :param command: 命令名称
-        args: 命令参数
-        :return: (stdout, stderr) 原始字符串
+        仅允许全局进入一次
         """
-        logger.debug(f"执行 AIVK 模块命令: {command} {args}")
-        proc = await asyncio.create_subprocess_exec(
-            command,
-            *args,
-            cwd=self.home,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
-        )
-        assert proc.stdout is not None
-        assert proc.stderr is not None
-
-        stdout_chunks: list[bytes] = []
-        stderr_chunks: list[bytes] = []
-
-        async def read_stream(stream: asyncio.StreamReader, chunks: list[bytes], log_func: Callable[[str], None]) -> None:
-            async for chunk in stream:
-                stdout = chunk.decode()
-                log_func(stdout.rstrip())
-                chunks.append(chunk)
-
-        await asyncio.gather(
-            read_stream(proc.stdout, stdout_chunks, logger.debug),
-            read_stream(proc.stderr, stderr_chunks, logger.error)
-        )
-
-        await proc.wait()
-        logger.debug(f"执行 AIVK 模块命令完成: {command} {args}")
-        return b"".join(stdout_chunks), b"".join(stderr_chunks)
-
-
-    def __getattr__(self, item: str):
-        """
-        当访问不存在的属性时报错
-        """
-        available_paths = [name for name in dir(self) if not name.startswith('_') and isinstance(getattr(self.__class__, name, None), property)]
-        raise AttributeError(f"{self.__class__.__name__} 禁止访问 '{item}'。可用路径：{available_paths}")
+        async with asyncio.Lock():
+            with threading.Lock():
+                logger.info("aivk 文件系统初始化")
+                id = "aivk"
+                fs = cls.getFS(id)
+                cwd = Path.cwd()
+                old_sys_path = sys.path.copy()
+                old_environ = os.environ.copy()
     
+                os.chdir(fs.home)
+                activate_this = fs.venv / ("Scripts" if os.name == "nt" else "bin") / "activate_this.py"
+                
+                if not fs.venv.exists():
+                    try:
+                        # 只允许第一个进入的线程/协程激活虚拟环境
+                        python_exe = sys.executable
+                        subprocess.run(
+                            ["uv", "venv", "-p", python_exe, str(fs.venv)],
+                            check=True
+                        )
+                    except Exception as e:
+                        logger.error(f"激活虚拟环境失败: {e}")
+                        subprocess.run(
+                            ["python", "-m", "venv", str(fs.venv)],
+                            check=True
+                        )
 
-    def __dir__(self) -> list[str]:
-        """
-        返回 AIVK 文件系统可用路径列表
-        """
-        return list(self.__class__.__dict__.keys())
-    
-    def __repr__(self) -> str:
-        """
-        返回 AIVK 文件系统实例的字符串表示
-        """
-        return f"<AivkFS id={self.id} >"
+                if not cls._venv_activated:
+                    if activate_this.exists():
+                        runpy.run_path(str(activate_this))
+                    cls._venv_activated = True
+
+                logger.info("aivk 文件系统已初始化")
+                try:
+                    yield fs
+                finally:
+                    os.chdir(cwd)
+                    sys.path[:] = old_sys_path
+                    os.environ.clear()
+                    os.environ.update(old_environ)
+                    cls._venv_activated = False
