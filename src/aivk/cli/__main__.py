@@ -2,9 +2,10 @@
 from click import Context, group, option, pass_context
 from logging import Logger, getLogger
 
-from colorlog import ColoredFormatter 
+from rich.traceback import install as install_rich_traceback
+from colorlog import ColoredFormatter
 from .run import run
-
+install_rich_traceback()
 logger = getLogger("aivk")
 
 def setup_aivk_logger(logger: Logger, level: int):

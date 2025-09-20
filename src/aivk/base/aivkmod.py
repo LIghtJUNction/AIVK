@@ -1,11 +1,14 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, TYPE_CHECKING
 from pluggy import HookspecMarker
 
-from .config import AivkConfig
+if TYPE_CHECKING:
+    from ..config.models import AivkConfig
 
 class AivkMod(ABC):
-    config: AivkConfig
+    config: "AivkConfig"
     _aivk_spec = HookspecMarker("aivk")
 
     @property
